@@ -8,17 +8,19 @@ import {
 import { inArray } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ url }) => {
-  const selectedIngredients = url.searchParams.getAll('ingredient').map(Number);
+  const selectionIngredients = url.searchParams
+    .getAll('ingredient')
+    .map(Number);
 
   const allIngredients = await db.select().from(ingredients);
 
   // Aucun filtre = toutes les recettes
-  if (selectedIngredients.length === 0) {
+  if (selectionIngredients.length === 0) {
     const allRecettes = await db.select().from(recettes);
     return {
       recettes: allRecettes,
       ingredients: allIngredients,
-      selectedIngredients,
+      selectionIngredients,
     };
   }
 
@@ -28,7 +30,7 @@ export const load: PageServerLoad = async ({ url }) => {
       recetteId: recetteIngredients.recetteId,
     })
     .from(recetteIngredients)
-    .where(inArray(recetteIngredients.ingredientId, selectedIngredients));
+    .where(inArray(recetteIngredients.ingredientId, selectionIngredients));
 
   // Compter combien d'ingrédients cochés chaque recette possède
   const countMap = new Map<number, number>();
@@ -39,7 +41,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
   // Garder uniquement les recettes qui ont TOUS les ingrédients cochés
   const validRecetteIds = [...countMap.entries()]
-    .filter(([_, count]) => count === selectedIngredients.length)
+    .filter(([_, count]) => count === selectionIngredients.length)
     .map(([id]) => id);
 
   // Récupérer les recettes finales
@@ -51,6 +53,6 @@ export const load: PageServerLoad = async ({ url }) => {
   return {
     recettes: filteredRecettes,
     ingredients: allIngredients,
-    selectedIngredients,
+    selectionIngredients,
   };
 };

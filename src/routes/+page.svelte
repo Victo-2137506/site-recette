@@ -1,24 +1,32 @@
 <script lang="ts">
-    let { data } = $props();
+	import { goto } from '$app/navigation';
 
-    // Ingrédients sélectionnés (Set pour simplifier l'ajout/retrait)
-    let selected = new Set(data.selectedIngredients);
+	let { data } = $props();
 
-    // Ajoute ou retire un ingrédient des filtres
-    function toggle(id: number) {
-        if (selected.has(id)) {
-            selected.delete(id);
-        } else {
-            selected.add(id);
-        }
+    // Ligne générer par Claude.IA
+    // Crée un Set pour stocker les IDs des ingrédients sélectionnés
+	let selection = new Set(data.selectionIngredients);
 
-        // Reconstruit l'URL avec les ingrédients cochés
-        const params = new URLSearchParams();
-        selected.forEach((id) => params.append('ingredient', String(id)));
+    // Fonction pour gérer la sélection/désélection des ingrédients (filtres)
+	function changerFiltre(id: number) {
+		if (selection.has(id)) {
+			selection.delete(id);
+		} else {
+			selection.add(id);
+		}
 
-        // Recharge la page avec les bons filtres
-        window.location.search = params.toString();
-    }
+        // Crée un objet URLSearchParams pour construire la chaîne de requête
+		const params = new URLSearchParams();
+		selection.forEach((id) => params.append('ingredient', String(id)));
+
+        // Met à jour l'URL avec les ingrédients sélectionnés sans recharger la page
+        // https://svelte.dev/docs/kit/$app-navigation#goto
+		goto(`?${params.toString()}`, {
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true
+		});
+	}
 </script>
 
 <h1>Recettes</h1>
@@ -31,8 +39,8 @@
         <label>
             <input
                 type="checkbox"
-                checked={selected.has(ingredient.id)}
-                onchange={() => toggle(ingredient.id)}
+                checked={selection.has(ingredient.id)}
+                onchange={() => changerFiltre(ingredient.id)}
             />
             {ingredient.nom}
         </label>
