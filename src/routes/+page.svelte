@@ -49,15 +49,17 @@
 
 <!-- Liste des recettes -->
 <div class="recipes-grid">
-    {#each data.recettes as recette}
-        <div class="recipe-card">
-            <div class="recipe-image"></div>
+	{#each data.recettes as recette}
+		<a href="/recettes/{recette.id}" class="recipe-card-link">
+			<div class="recipe-card">
+				<div class="recipe-image"></div>
 
-            <div class="recipe-content">
-                <h2>{recette.titre}</h2>
-                <p class="recipe-description">{recette.description}</p>
-            </div>
-        </div>
-    {/each}
+				<div class="recipe-content">
+					<h2>{recette.titre}</h2>
+					<p class="recipe-description">{recette.description}</p>
+				</div>
+			</div>
+		</a>
+	{/each}
 </div>
 
