@@ -5,7 +5,9 @@ import type { User, Session } from 'better-auth';
 declare global {
   namespace App {
     // interface Error {}
+    // interface Locals {}
     interface Locals {
+      // Définition des types pour les propriétés user et session
       user: typeof auth.$Infer.Session.user | null;
       session: typeof auth.$Infer.Session.session | null;
     }

@@ -7,6 +7,7 @@ import {
 } from '$lib/server/db/schema';
 import { inArray } from 'drizzle-orm';
 
+// Récupère les recettes et les ingrédients en fonction des ingrédients sélectionnés
 export const load: PageServerLoad = async ({ url }) => {
   const selectionIngredients = url.searchParams
     .getAll('ingredient')

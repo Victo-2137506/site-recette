@@ -10,7 +10,7 @@ export const load: PageServerLoad = (event) => {
   }
   return {};
 };
-
+// Actions pour la connexion et l'inscription de l'utilisateur
 export const actions: Actions = {
   signInEmail: async (event) => {
     const formData = await event.request.formData();

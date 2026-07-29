@@ -10,6 +10,7 @@ export const load: PageServerLoad = (event) => {
   return { user: event.locals.user };
 };
 
+// Action pour la déconnexion de l'utilisateur
 export const actions: Actions = {
   signOut: async (event) => {
     await auth.api.signOut({
