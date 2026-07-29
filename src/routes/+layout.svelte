@@ -28,14 +28,14 @@
 
 			{#if data.user}
 				<a href="/mes-recettes" class="nav-link">Mes recettes</a>
-				<a href="/demo/better-auth" class="nav-link nav-icon" aria-label="Mon profil">
+				<a href="/profil" class="nav-link nav-icon" aria-label="Mon profil">
 					<User size={20} />
 				</a>
 				<button onclick={handleSignOut} class="nav-link nav-icon" aria-label="Se déconnecter">
 					<LogOut size={20} />
 				</button>
 			{:else}
-				<a href="/demo/better-auth/login" class="nav-link nav-icon" aria-label="Se connecter">
+				<a href="/connexion" class="nav-link nav-icon" aria-label="Se connecter">
 					<LogIn size={20} />
 				</a>
 			{/if}
