@@ -19,7 +19,6 @@
 
 	<div>
 		<h1 class="text-2xl font-bold text-orange-700">{data.user.name}</h1>
-		<p class="text-sm text-gray-500">ID: {data.user.id}</p>
 	</div>
 
 	<!-- <form method="post" action="?/signOut" use:enhance class="ml-auto">
@@ -29,4 +28,19 @@
 	</form> -->
 </div>
 
-<!-- TODO: liste des recettes créées par cet utilisateur, une fois la vraie page profil construite -->
+<h2 class="mb-4 text-xl font-bold text-orange-700">Mes recettes</h2>
+
+<div class="flex flex-col gap-5">
+	{#each data.recettes as recette}
+		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
+			<div class="rounded-xl bg-white p-5 shadow-md">
+				<h3 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h3>
+				<p class="text-gray-500">{recette.description}</p>
+			</div>
+		</a>
+	{:else}
+		<div class="rounded-xl bg-white p-10 text-center shadow-md">
+			<p class="text-lg font-semibold text-gray-800">Tu n'as pas encore créé de recette</p>
+		</div>
+	{/each}
+</div>

@@ -35,11 +35,10 @@
 		</h2>
 		<ul class="flex flex-col gap-2">
 			{#each recette.recetteIngredients as ri}
-				<li class="rounded-lg bg-gray-100 px-3 py-2">
-					<!-- L'unité est affichée seulement si présente -->
-					{ri.quantite}{#if ri.unite} {ri.unite}{/if}
-					— {ri.ingredient.nom}
-				</li>
+		<!-- &nbsp;—&nbsp générer par Claude.IA -->
+		<li class="rounded-lg bg-gray-100 px-3 py-2">
+			{#if ri.quantite}{ri.quantite}{#if ri.unite}&nbsp;{ri.unite}{/if}&nbsp;—&nbsp;{/if}{ri.ingredient.nom}
+		</li>
 			{/each}
 		</ul>
 	</section>

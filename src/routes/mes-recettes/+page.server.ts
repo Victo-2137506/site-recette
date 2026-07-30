@@ -1,13 +1,17 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { recettes } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
-// Charge la page des recettes de l'utilisateur connecté
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
     throw redirect(303, '/connexion');
   }
 
-  // TODO: récupérer les recettes de l'utilisateur connecté une fois le CRUD construit
+  const mesRecettes = await db.query.recettes.findMany({
+    where: eq(recettes.utilisateurId, locals.user.id),
+  });
 
-  return {};
+  return { recettes: mesRecettes };
 };

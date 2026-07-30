@@ -9,9 +9,11 @@ import { inArray } from 'drizzle-orm';
 
 // Récupère les recettes et les ingrédients en fonction des ingrédients sélectionnés
 export const load: PageServerLoad = async ({ url }) => {
-  const selectionIngredients = url.searchParams
-    .getAll('ingredient')
-    .map(Number);
+  // On déduplique et on ignore les valeurs non numériques pour éviter
+  // qu'un paramètre invalide ou répété ne fausse le comptage plus bas.
+  const selectionIngredients = [
+    ...new Set(url.searchParams.getAll('ingredient').map(Number)),
+  ].filter(Number.isFinite);
 
   const allIngredients = await db.select().from(ingredients);
 

@@ -27,9 +27,9 @@ export const actions: Actions = {
       });
     } catch (error) {
       if (error instanceof APIError) {
-        return fail(400, { message: error.message || 'Signin failed' });
+        return fail(400, { message: error.message || 'Connexion échouée' });
       }
-      return fail(500, { message: 'Unexpected error' });
+      return fail(500, { message: 'Erreur inattendue' });
     }
 
     return redirect(302, '/profil');
@@ -51,9 +51,9 @@ export const actions: Actions = {
       });
     } catch (error) {
       if (error instanceof APIError) {
-        return fail(400, { message: error.message || 'Registration failed' });
+        return fail(400, { message: error.message || 'Inscription échouée' });
       }
-      return fail(500, { message: 'Unexpected error' });
+      return fail(500, { message: 'Erreur inattendue' });
     }
 
     return redirect(302, '/profil');

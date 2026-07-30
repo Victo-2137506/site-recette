@@ -26,7 +26,7 @@
 
 <div class="flex min-h-screen flex-col">
 	<header class="mb-5 bg-white px-6 py-4 shadow-sm">
-		<div class="mx-auto flex max-w-5xl items-center justify-between">
+		<div class="mx-auto flex max-w-7xl items-center justify-between">
 			<h1 class="text-2xl font-bold text-orange-600">Les recettes de grand-mère</h1>
 
 			<nav class="flex items-center gap-5">
@@ -59,7 +59,7 @@
 		</div>
 	</header>
 
-	<main class="mx-auto w-full max-w-5xl flex-1 px-5">{@render children()}</main>
+	<main class="mx-auto w-full max-w-7xl flex-1 px-5">{@render children()}</main>
 
 	<footer class="mt-10 border-t border-gray-200 bg-white px-5 py-5 text-center text-sm text-gray-500">
 		<p>© 2026 Les recettes de grand-mère — Créé par Frédérick BETHERMAT</p>

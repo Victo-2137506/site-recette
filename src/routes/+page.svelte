@@ -127,13 +127,18 @@
 </section>
 
 <!-- Liste des recettes filtrées, une par ligne, chacune cliquable vers sa page de détail -->
-<div class="flex flex-col">
+<div class="flex flex-col gap-5">
 	{#each data.recettes as recette}
 		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
-			<div class="mb-5 rounded-xl bg-white p-5 shadow-md">
+			<div class="rounded-xl bg-white p-5 shadow-md">
 				<h2 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h2>
 				<p class="text-gray-500">{recette.description}</p>
 			</div>
 		</a>
+	{:else}
+		<div class="rounded-xl bg-white p-10 text-center shadow-md">
+			<p class="text-lg font-semibold text-gray-800">Aucune recette ne correspond à ces filtres</p>
+			<p class="mt-1 text-sm text-gray-500">Essaie de retirer un ou plusieurs filtres pour voir plus de résultats.</p>
+		</div>
 	{/each}
 </div>
