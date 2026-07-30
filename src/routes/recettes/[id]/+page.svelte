@@ -1,4 +1,5 @@
 <!-- Le tailwindCSS est généré par Claude.IA -->
+<!-- Principe de la route [id] permet de récupérer les détails d'une recette spécifique : https://svelte.dev/docs/kit/advanced-routing -->
 <script lang="ts">
 	let { data } = $props();
 	const { recette } = data;
@@ -10,9 +11,10 @@
 
 <!-- Lien de retour vers la page d'accueil -->
 <a href="/" class="mb-5 inline-block text-sm text-gray-500 no-underline hover:text-orange-600">
-	← Retour aux recettes
+	Retour aux recettes
 </a>
 
+<!-- Affiche les détails de la recette, le titre, l'auteur, la description, les ingrédients et les étapes -->
 <article class="rounded-xl bg-white p-8 shadow-md">
 	<h1 class="mb-2.5 text-3xl font-bold text-orange-700">{recette.titre}</h1>
 

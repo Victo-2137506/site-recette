@@ -16,6 +16,7 @@ export const load: PageServerLoad = async (event) => {
     where: eq(recettes.utilisateurId, event.locals.user.id),
   });
 
+  // Retourne les recettes de l'utilisateur et les informations de l'utilisateur connecté
   return { user: event.locals.user, recettes: mesRecettes };
 };
 

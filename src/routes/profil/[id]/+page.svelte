@@ -1,4 +1,5 @@
 <!-- Le tailwindCSS est généré par Claude.IA -->
+<!-- Principe de la route [id] permet de récupérer les détails d'un utilisateur spécifique : https://svelte.dev/docs/kit/advanced-routing -->
 <script lang="ts">
 	let { data } = $props();
 	const { utilisateur } = data;
@@ -10,6 +11,7 @@
 	<title>{utilisateur.nom} — Les recettes de grand-mère</title>
 </svelte:head>
 
+<!-- Affiche les détails de l'utilisateur et ses recettes -->
 <div class="mb-8 flex items-center gap-5 rounded-xl bg-white p-8 shadow-md">
 	<div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-orange-600 text-2xl font-bold text-white">
 		{initiale}
@@ -22,6 +24,7 @@
 
 <h2 class="mb-4 text-xl font-bold text-orange-700">Recettes créées</h2>
 
+<!-- Affiche la liste des recettes de l'utilisateur ou un message si aucune recette n'est trouvée -->
 <div class="flex flex-col gap-5">
 	{#each data.recettes as recette}
 		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">

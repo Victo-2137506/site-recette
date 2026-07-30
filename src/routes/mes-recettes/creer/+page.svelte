@@ -103,7 +103,7 @@
 						<span class="w-28 shrink-0 font-medium">{ingredient?.nom}</span>
 
 						<input type="hidden" name="ingredient_id" value={id} />
-                        <!-- Les champs quantite et unite sont optionnels -->
+                        <!-- Les champs quantite -->
 						<input
 							type="number"
 							step="any"
@@ -113,6 +113,7 @@
 							class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
 						/>
 
+						<!-- L'unité est également -->
 						<input
 							type="text"
 							name="unite"

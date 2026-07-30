@@ -9,6 +9,9 @@
 	// goto() : navigue vers une autre route sans recharger la page
 	// invalidateAll() : force SvelteKit à ré-exécuter toutes les fonctions load actives : https://svelte.dev/docs/kit/$app-navigation
 	import { goto, invalidateAll } from '$app/navigation';
+	// page : objet réactif donnant accès à l'URL actuelle, utilisé pour savoir quel onglet est actif
+	// Doc officielle : https://svelte.dev/docs/kit/$app-state
+	import { page } from '$app/state';
 
 	let { data, children } = $props();
 
@@ -18,28 +21,33 @@
 		await invalidateAll();
 		goto('/');
 	}
+
+	// Classes réutilisées pour l'état actif/inactif d'un lien de navigation
+	const linkActive = 'font-semibold text-orange-600';
+	const linkInactive = 'text-gray-500 hover:text-orange-600';
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
+<!-- Layout principal de l'application, avec un header, un main et un footer -->
 <div class="flex min-h-screen flex-col">
 	<header class="mb-5 bg-white px-6 py-4 shadow-sm">
 		<div class="mx-auto flex max-w-7xl items-center justify-between">
 			<h1 class="text-2xl font-bold text-orange-600">Les recettes de grand-mère</h1>
-
 			<nav class="flex items-center gap-5">
-				<a href="/" class="text-gray-500 transition hover:text-orange-600">Général</a>
+				<!-- Route "Général" -->
+				<a href="/" class="transition {page.url.pathname === '/' ? linkActive : linkInactive}">Général</a>
 
 				{#if data.user}
-					<!-- Route "Mes recettes" -->
-					<a href="/mes-recettes" class="text-gray-500 transition hover:text-orange-600">
+					<!-- Route "Mes recettes" : startsWith() pour rester actif aussi sur /mes-recettes/creer, /mes-recettes/[id]/modifier -->
+					<a href="/mes-recettes" class="transition {page.url.pathname.startsWith('/mes-recettes') ? linkActive : linkInactive}">
 						Mes recettes
 					</a>	
 					<!-- Route "Créer une recette" -->
 					<a href="/profil"
-						class="flex items-center text-gray-500 transition hover:text-orange-600"
+						class="flex items-center transition {page.url.pathname === '/profil' ? linkActive : linkInactive}"
 						aria-label="Mon profil"
 					><User size={20} /></a>
 					<!-- Bouton de déconnexion -->
@@ -51,7 +59,7 @@
 				{:else}
 					<!-- Route "Connexion" -->
 					<a href="/connexion"
-						class="flex items-center text-gray-500 transition hover:text-orange-600"
+						class="flex items-center transition {page.url.pathname === '/connexion' ? linkActive : linkInactive}"
 						aria-label="Se connecter"
 					><LogIn size={20} /></a>
 				{/if}

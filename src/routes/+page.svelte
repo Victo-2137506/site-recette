@@ -105,6 +105,7 @@
 	{#if ingredientsSelectionnes.length > 0}
 		<div class="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-4">
 			<span class="text-sm font-semibold text-gray-500">Filtres actifs :</span>
+			<!-- Boucle sur ingredientsSelectionnes pour afficher une pastille par ingrédient actif -->
 			{#each ingredientsSelectionnes as ingredient}
 				<button
 					type="button"
@@ -128,6 +129,7 @@
 
 <!-- Liste des recettes filtrées, une par ligne, chacune cliquable vers sa page de détail -->
 <div class="flex flex-col gap-5">
+	<!-- Boucle sur data.recettes pour afficher chaque recette filtrée -->
 	{#each data.recettes as recette}
 		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
 			<div class="rounded-xl bg-white p-5 shadow-md">

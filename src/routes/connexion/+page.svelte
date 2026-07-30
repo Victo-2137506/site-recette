@@ -10,6 +10,7 @@
 	<title>Connexion — Les recettes de grand-mère</title>
 </svelte:head>
 
+<!-- Affiche le formulaire de connexion et d'inscription avec les champs email, mot de passe et nom -->
 <div class="flex justify-center px-5 py-10">
 	<div class="w-full max-w-md rounded-xl bg-white p-10 shadow-md">
 		<h1 class="text-center text-3xl font-bold text-orange-700">Bienvenue</h1>

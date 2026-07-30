@@ -15,11 +15,13 @@ const originalHandle: Handle = async ({ event, resolve }) => {
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
   const session = await auth.api.getSession({ headers: event.request.headers });
 
+  // Si une session est trouvée, on met à jour les valeurs de session et d'utilisateur dans event.locals.
   if (session) {
     event.locals.session = session.session;
     event.locals.user = session.user;
   }
 
+  // On utilise svelteKitHandler pour gérer les requêtes avec better-auth, en passant les valeurs de session et d'utilisateur.
   return svelteKitHandler({ event, resolve, auth, building });
 };
 

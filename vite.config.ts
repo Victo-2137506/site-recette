@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-auto';
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -20,8 +21,17 @@ export default defineConfig({
 			typescript: {
 				config: (config) => {
 					config.include.push('../drizzle.config.ts');
+					config.include.push('../dev/**/*.ts');
 				}
 			}
 		})
-	]
+	],
+
+	// Les tests unitaires vivent tous dans `dev/`, un fichier par cas.
+	// `dev/setup.ts` installe les mocks (base de données, authentification).
+	test: {
+		include: ['dev/**/*.test.ts'],
+		setupFiles: ['./dev/setup.ts'],
+		environment: 'node'
+	}
 });

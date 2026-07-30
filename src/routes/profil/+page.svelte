@@ -12,6 +12,7 @@
 	<title>Mon profil — Les recettes de grand-mère</title>
 </svelte:head>
 
+<!-- Affiche les détails de l'utilisateur et ses recettes -->
 <div class="flex items-center gap-5 rounded-xl bg-white p-8 shadow-md mb-8">
 	<div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-orange-600 text-2xl font-bold text-white">
 		{initiale}
@@ -30,8 +31,11 @@
 
 <h2 class="mb-4 text-xl font-bold text-orange-700">Mes recettes</h2>
 
+<!-- Affiche la liste des recettes de l'utilisateur ou un message si aucune recette n'est trouvée -->
 <div class="flex flex-col gap-5">
+	<!-- Parcourt les recettes de l'utilisateur et les affiche -->
 	{#each data.recettes as recette}
+		<!-- Chaque recette est un lien vers sa page de détails -->
 		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
 			<div class="rounded-xl bg-white p-5 shadow-md">
 				<h3 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h3>

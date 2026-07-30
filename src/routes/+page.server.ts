@@ -15,6 +15,7 @@ export const load: PageServerLoad = async ({ url }) => {
     ...new Set(url.searchParams.getAll('ingredient').map(Number)),
   ].filter(Number.isFinite);
 
+  // Récupère tous les ingrédients de la base de données pour l'affichage des filtres
   const allIngredients = await db.select().from(ingredients);
 
   // Aucun filtre = toutes les recettes
@@ -38,6 +39,7 @@ export const load: PageServerLoad = async ({ url }) => {
   // Compter combien d'ingrédients cochés chaque recette possède
   const countMap = new Map<number, number>();
 
+  // Parcourt les lignes récupérées et met à jour le compteur pour chaque recette
   for (const row of rows) {
     countMap.set(row.recetteId, (countMap.get(row.recetteId) ?? 0) + 1);
   }
@@ -53,6 +55,7 @@ export const load: PageServerLoad = async ({ url }) => {
     .from(recettes)
     .where(inArray(recettes.id, validRecetteIds));
 
+  // Retourne les recettes filtrées, tous les ingrédients et les ingrédients sélectionnés pour l'affichage
   return {
     recettes: filteredRecettes,
     ingredients: allIngredients,
