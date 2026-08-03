@@ -13,9 +13,9 @@ import { reinitialiserBase } from './helpers/faux-db';
 vi.mock('$lib/server/db', () => ({ db: mocks.db }));
 vi.mock('$lib/server/auth', () => ({ auth: mocks.auth }));
 
-// `eq` et `inArray` sont remplacés par des objets simples que la fausse base
-// sait interpréter. Le reste de drizzle-orm (dont `relations`) reste réel,
-// sinon le schéma ne pourrait pas être construit.
+// `eq`, `inArray`, `and` et `count` sont remplacés par des objets simples que la
+// fausse base sait interpréter. Le reste de drizzle-orm (dont `relations`) reste
+// réel, sinon le schéma ne pourrait pas être construit.
 vi.mock('drizzle-orm', async (importOriginal) => {
   const reel = await importOriginal<typeof import('drizzle-orm')>();
   return {
@@ -26,6 +26,12 @@ vi.mock('drizzle-orm', async (importOriginal) => {
       colonne,
       valeurs,
     }),
+    and: (...conditions: unknown[]) => ({
+      type: 'and',
+      conditions: conditions.filter(Boolean),
+    }),
+    // Marqueur d'agrégat, reconnu par la projection de `faux-db.ts`.
+    count: () => ({ type: 'count' }),
   };
 });
 

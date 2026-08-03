@@ -2,8 +2,10 @@
 
 Tests unitaires des fonctions `load` et des `actions` du site de recettes.
 
-**Un fichier = un cas de test.** Chaque fichier contient un seul `it`, ce qui rend
-un échec immédiatement lisible : le nom du fichier dit exactement ce qui est cassé.
+**Un fichier par module.** Chaque dossier regroupe tous les cas d'un même
+`+page.server.ts` dans un seul fichier, découpé en `describe` (un par `load` ou
+par action) : le nom du `describe` dit quelle fonction est testée, celui du `it`
+dit quel comportement est cassé.
 
 ## Lancer les tests
 
@@ -26,17 +28,17 @@ dev/
 │   ├── faux-db.ts            base en mémoire + mini query builder drizzle
 │   └── evenement.ts          faux `event` SvelteKit + utilitaires d'assertion
 │
-├── accueil/                  8 cas — src/routes/+page.server.ts
-├── recette-detail/           3 cas — src/routes/recettes/[id]/
+├── accueil/                 10 cas — src/routes/+page.server.ts
+├── recette-detail/          13 cas — src/routes/recettes/[id]/ (dont les j'aime)
 ├── mes-recettes/             7 cas — load + action supprimer
-├── creer-recette/            8 cas — load + action de création
-├── modifier-recette/        11 cas — load + action de modification
+├── creer-recette/            9 cas — load + action de création
+├── modifier-recette/        13 cas — load + action de modification
 ├── profil/                   4 cas — load + action signOut
 ├── profil-public/            3 cas — src/routes/profil/[id]/
 └── connexion/                8 cas — load + signInEmail / signUpEmail
 ```
 
-Soit **52 cas** couvrant les 8 modules `+page.server.ts` du projet.
+Soit **67 cas** couvrant les 8 modules `+page.server.ts` du projet.
 
 ## Les données de test
 
@@ -52,9 +54,19 @@ test ne dépend d'un autre. Le jeu de données est toujours le même :
 Ce trio est choisi pour couvrir le filtrage : une recette a les deux ingrédients
 communs, une n'en a qu'un, une appartient à un autre utilisateur.
 
+Les « j'aime » suivent la même logique — trois comptes différents, et une recette
+aimée par son propre auteur :
+
+| Recette | Aimée par | Total |
+|---|---|---|
+| `10` Poulet au riz | Alice (u1) et Bob (u2) | 2 |
+| `11` Poulet rôti | Bob (u2) | 1 |
+| `12` Riz sauté | personne | 0 |
+
 ## Ajouter un cas
 
-Créer `dev/<module>/<ce-qui-est-verifie>.test.ts` :
+Ouvrir `dev/<module>/<module>.test.ts` et ajouter un `it` dans le `describe` de
+la fonction concernée :
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -70,14 +82,15 @@ describe('load de mon module', () => {
 });
 ```
 
-Rien d'autre à faire : `setup.ts` installe les mocks automatiquement.
+Pour un module encore non couvert, créer `dev/<module>/<module>.test.ts` : rien
+d'autre à faire, `setup.ts` installe les mocks automatiquement.
 
 ### Les helpers utiles
 
 | Helper | Usage |
 |---|---|
 | `evenement({ url, params, user, headers })` | faux `event` pour un `load` |
-| `evenementFormulaire({ champs, params, user })` | faux `event` POST pour une `action` ; un tableau en valeur produit des clés répétées (`ingredient_id`, `quantite`, `unite`) |
+| `evenementFormulaire({ champs, params, user })` | faux `event` POST pour une `action` ; un tableau en valeur produit des clés répétées (`etape`, `ingredient_id`, `quantite`, `unite`) |
 | `attraper(() => ...)` | capture la valeur levée par `error()` / `redirect()`, à inspecter avec `isHttpError` / `isRedirect` |
 | `sansVoid(resultat)` | affirme au compilateur que le `load` a bien renvoyé un objet |
 | `echec(resultat)` | idem pour une `action`, afin de lire `.status` et `.data` d'un `fail()` |
@@ -96,7 +109,7 @@ Rien d'autre à faire : `setup.ts` installe les mocks automatiquement.
 `faux-db.ts` ne réimplémente pas drizzle, seulement ce que les routes utilisent :
 
 ```
-db.select(projection?).from(table).where(condition)
+db.select(projection?).from(table).where(condition).groupBy(colonne)
 db.query.<table>.findMany({ where })
 db.query.<table>.findFirst({ where, with })
 db.insert(table).values(lignes)          → [{ insertId }]
@@ -104,6 +117,10 @@ db.update(table).set(valeurs).where(condition)
 db.delete(table).where(condition)
 ```
 
-`eq` et `inArray` sont mockés en objets simples que le filtre sait interpréter.
+`eq`, `inArray`, `and` et `count` sont mockés en objets simples que le filtre et
+la projection savent interpréter. `count()` dans une projection déclenche
+l'agrégation : une ligne par groupe avec `groupBy`, une seule ligne sinon (même
+quand le filtre ne ramène rien, comme en SQL).
+
 Toute autre opération lève une erreur explicite (« Colonne non gérée… ») : si un
 test échoue là-dessus, c'est qu'il faut étendre `faux-db.ts`.

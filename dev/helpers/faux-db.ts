@@ -5,15 +5,15 @@
 // mini « query builder » qui comprend les quelques opérations drizzle
 // réellement utilisées par les routes :
 //
-//   db.select(projection?).from(table).where(condition)
+//   db.select(projection?).from(table).where(condition).groupBy(colonne)
 //   db.query.<table>.findMany({ where })
 //   db.query.<table>.findFirst({ where, with })
 //   db.insert(table).values(lignes)
 //   db.update(table).set(valeurs).where(condition)
 //   db.delete(table).where(condition)
 //
-// `eq` et `inArray` sont mockés en objets simples ({ type, colonne, valeur })
-// que `filtrer` sait interpréter.
+// `eq`, `inArray`, `and` et `count` sont mockés en objets simples
+// ({ type, colonne, valeur }) que `filtrer` et `projeter` savent interpréter.
 
 import { vi } from 'vitest';
 import {
@@ -21,6 +21,7 @@ import {
   ingredients,
   recetteIngredients,
   utilisateurs,
+  jaime,
 } from '$lib/server/db/schema';
 import { mocks } from './mocks';
 
@@ -41,12 +42,18 @@ export type LigneRecetteIngredient = {
   quantite: string;
   unite: string | null;
 };
+export type LigneJaime = {
+  utilisateurId: string;
+  recetteId: number;
+  creeLe: Date;
+};
 
 export type Base = {
   utilisateurs: LigneUtilisateur[];
   ingredients: LigneIngredient[];
   recettes: LigneRecette[];
   recetteIngredients: LigneRecetteIngredient[];
+  jaime: LigneJaime[];
 };
 
 // État courant, reconstruit avant chaque test par `reinitialiserBase()`.
@@ -70,22 +77,36 @@ function cleColonne(colonne: unknown): string {
   if (colonne === ingredients.id) return 'id';
   if (colonne === ingredients.nom) return 'nom';
   if (colonne === utilisateurs.id) return 'id';
+  if (colonne === jaime.recetteId) return 'recetteId';
+  if (colonne === jaime.utilisateurId) return 'utilisateurId';
   throw new Error('Colonne non gérée par le mock de base de données');
 }
 
 type Condition = {
   type: string;
-  colonne: unknown;
+  colonne?: unknown;
   valeur?: unknown;
   valeurs?: unknown[];
+  conditions?: Condition[];
 };
 
-// Applique une condition `eq` ou `inArray` sur un tableau de lignes.
+// Applique une condition `eq`, `inArray` ou `and` sur un tableau de lignes.
 function filtrer<T extends Record<string, unknown>>(
   lignes: T[],
   condition: Condition | undefined,
 ): T[] {
   if (!condition) return lignes;
+
+  // `and` combine ses sous-conditions : chacune restreint le résultat de la
+  // précédente. C'est le cas des actions sur les « j'aime », identifiés par le
+  // couple (recette, utilisateur).
+  if (condition.type === 'and') {
+    return (condition.conditions ?? []).reduce(
+      (restantes, sous) => filtrer(restantes, sous),
+      lignes,
+    );
+  }
+
   const cle = cleColonne(condition.colonne);
 
   if (condition.type === 'eq') {
@@ -103,39 +124,81 @@ function lignesDe(table: unknown): Record<string, unknown>[] {
   if (table === ingredients) return donnees.ingredients;
   if (table === recetteIngredients) return donnees.recetteIngredients;
   if (table === utilisateurs) return donnees.utilisateurs;
+  if (table === jaime) return donnees.jaime;
   throw new Error('Table non gérée par le mock de base de données');
 }
 
-// Ne garde que les colonnes demandées dans `db.select({ ... })`.
+// `count()` est mocké en `{ type: 'count' }` : dans une projection, cette valeur
+// ne désigne pas une colonne à lire mais un nombre de lignes à calculer.
+function estCount(valeur: unknown): boolean {
+  return (
+    typeof valeur === 'object' &&
+    valeur !== null &&
+    (valeur as { type?: string }).type === 'count'
+  );
+}
+
+// Construit une ligne de résultat à partir d'un groupe de lignes : les alias
+// `count()` reçoivent la taille du groupe, les autres la valeur de la colonne.
+function ligneProjetee(
+  groupe: Record<string, unknown>[],
+  projection: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(projection).map(([alias, colonne]) => [
+      alias,
+      estCount(colonne) ? groupe.length : groupe[0]?.[cleColonne(colonne)],
+    ]),
+  );
+}
+
+// Ne garde que les colonnes demandées dans `db.select({ ... })`, et applique
+// l'agrégation quand la projection contient un `count()`.
 function projeter(
   lignes: Record<string, unknown>[],
   projection?: Record<string, unknown>,
+  groupe?: unknown,
 ): Record<string, unknown>[] {
   if (!projection) return lignes;
-  return lignes.map((ligne) =>
-    Object.fromEntries(
-      Object.entries(projection).map(([alias, colonne]) => [
-        alias,
-        ligne[cleColonne(colonne)],
-      ]),
-    ),
+
+  if (!Object.values(projection).some(estCount)) {
+    return lignes.map((ligne) => ligneProjetee([ligne], projection));
+  }
+
+  // Sans `groupBy`, un agrégat SQL renvoie toujours exactement une ligne,
+  // y compris quand le filtre ne ramène rien (le compte vaut alors 0).
+  if (groupe === undefined) return [ligneProjetee(lignes, projection)];
+
+  const cle = cleColonne(groupe);
+  const groupes = new Map<unknown, Record<string, unknown>[]>();
+
+  for (const ligne of lignes) {
+    const valeur = ligne[cle];
+    if (!groupes.has(valeur)) groupes.set(valeur, []);
+    groupes.get(valeur)!.push(ligne);
+  }
+
+  return [...groupes.values()].map((lignesDuGroupe) =>
+    ligneProjetee(lignesDuGroupe, projection),
   );
 }
 
 // --- SELECT ---
 
-// Un « query builder » minimal : chaînable via `.where()` et attendable via `await`.
-// La copie du tableau à la résolution évite qu'un test observe des mutations
-// faites après la lecture.
+// Un « query builder » minimal : chaînable via `.where()` / `.groupBy()` et
+// attendable via `await`. La copie du tableau à la résolution évite qu'un test
+// observe des mutations faites après la lecture.
 function requete(
   lignes: Record<string, unknown>[],
   projection?: Record<string, unknown>,
+  groupe?: unknown,
 ) {
   return {
     where: (condition: Condition) =>
-      requete(filtrer(lignes, condition), projection),
+      requete(filtrer(lignes, condition), projection, groupe),
+    groupBy: (colonne: unknown) => requete(lignes, projection, colonne),
     then: (ok: (v: unknown) => unknown, ko?: (e: unknown) => unknown) =>
-      Promise.resolve(projeter([...lignes], projection)).then(ok, ko),
+      Promise.resolve(projeter([...lignes], projection, groupe)).then(ok, ko),
   };
 }
 
@@ -195,11 +258,14 @@ function inserer(table: unknown, valeurs: unknown) {
     const ligne = { ...(valeur as Record<string, unknown>) };
 
     // Seules `recettes` et `ingredients` ont une clé auto-incrémentée ;
-    // `recette_ingredients` a une clé primaire composite.
+    // `recette_ingredients` et `jaime` ont une clé primaire composite.
     if (table === recettes || table === ingredients) {
       insertId = prochainId(cible as { id: number }[]);
       ligne.id = insertId;
     }
+
+    // `creeLe` est un `defaultNow()` en base : la route ne l'envoie jamais.
+    if (table === jaime && ligne.creeLe === undefined) ligne.creeLe = new Date();
 
     cible.push(ligne);
   }
@@ -262,6 +328,13 @@ export function reinitialiserBase() {
       { recetteId: 12, ingredientId: 2, quantite: '100', unite: 'g' },
       { recetteId: 12, ingredientId: 3, quantite: '2', unite: 'c. à s.' },
     ],
+    // Trois comptes différents (2, 1 et 0 j'aime) et une recette aimée par son
+    // propre auteur : de quoi couvrir le compteur comme l'état du bouton.
+    jaime: [
+      { utilisateurId: 'u1', recetteId: 10, creeLe: new Date('2026-01-01') },
+      { utilisateurId: 'u2', recetteId: 10, creeLe: new Date('2026-01-02') },
+      { utilisateurId: 'u2', recetteId: 11, creeLe: new Date('2026-01-03') },
+    ],
   };
 
   mocks.db.select = vi.fn((projection?: Record<string, unknown>) => ({
@@ -296,6 +369,12 @@ export function reinitialiserBase() {
       findFirst: async (options: { where?: Condition } = {}) => {
         const utilisateur = filtrer(donnees.utilisateurs, options.where)[0];
         return utilisateur ? { ...utilisateur } : undefined;
+      },
+    },
+    jaime: {
+      findFirst: async (options: { where?: Condition } = {}) => {
+        const like = filtrer(donnees.jaime, options.where)[0];
+        return like ? { ...like } : undefined;
       },
     },
   };
