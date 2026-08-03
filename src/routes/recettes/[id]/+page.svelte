@@ -1,6 +1,7 @@
 <!-- Le tailwindCSS est généré par Claude.IA -->
 <!-- Principe de la route [id] permet de récupérer les détails d'une recette spécifique : https://svelte.dev/docs/kit/advanced-routing -->
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	let { data } = $props();
 	const { recette } = data;
 </script>
@@ -25,6 +26,17 @@
 			{recette.utilisateur.nom}
 		</a>
 	</p>
+
+	<!-- Bouton j'aime/je n'aime plus -->
+	<form method="post" action="?/toggleLike" use:enhance>
+		<button type="submit"class="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition {data.dejaAime
+			? 'border-red-500 bg-red-50 text-red-600'
+			: 'border-gray-300 text-gray-600 hover:border-red-500 hover:text-red-600'}"
+			>
+			{data.dejaAime ? '❤️' : '🤍'} {data.nombreJaimes}
+			</button>
+	</form>
+
 
 	{#if recette.description}
 		<p class="mb-6 text-gray-500">{recette.description}</p>

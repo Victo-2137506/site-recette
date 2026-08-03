@@ -135,9 +135,12 @@
 			<div class="rounded-xl bg-white p-5 shadow-md">
 				<h2 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h2>
 				<p class="text-gray-500">{recette.description}</p>
+				<!-- Affiche le nombre de likes de la recette -->
+				<p class="mt-2 text-sm text-gray-500">❤️ {recette.nombreJaimes}</p>
 			</div>
 		</a>
 	{:else}
+		<!-- Si aucune recette ne correspond aux filtres, affiche un message d'information -->
 		<div class="rounded-xl bg-white p-10 text-center shadow-md">
 			<p class="text-lg font-semibold text-gray-800">Aucune recette ne correspond à ces filtres</p>
 			<p class="mt-1 text-sm text-gray-500">Essaie de retirer un ou plusieurs filtres pour voir plus de résultats.</p>

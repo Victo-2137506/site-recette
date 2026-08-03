@@ -4,8 +4,34 @@ import {
   recettes,
   ingredients,
   recetteIngredients,
+  jaime,
 } from '$lib/server/db/schema';
-import { inArray } from 'drizzle-orm';
+import { inArray, eq, count } from 'drizzle-orm';
+
+// Ajoute le nombre de likes à chaque recette d'une liste, en une seule requête groupée
+async function ajouterNombreJaimes(
+  recettesListe: (typeof recettes.$inferSelect)[],
+) {
+  if (recettesListe.length === 0) {
+    return [];
+  }
+
+  const idsRecettes = recettesListe.map((r) => r.id);
+
+  // Compte les likes pour chaque recette d'un coup, plutôt qu'une requête par recette
+  const compteurs = await db
+    .select({ recetteId: jaime.recetteId, total: count() })
+    .from(jaime)
+    .where(inArray(jaime.recetteId, idsRecettes))
+    .groupBy(jaime.recetteId);
+
+  const compteursMap = new Map(compteurs.map((c) => [c.recetteId, c.total]));
+
+  return recettesListe.map((recette) => ({
+    ...recette,
+    nombreJaimes: compteursMap.get(recette.id) ?? 0,
+  }));
+}
 
 // Récupère les recettes et les ingrédients en fonction des ingrédients sélectionnés
 export const load: PageServerLoad = async ({ url }) => {
@@ -22,7 +48,7 @@ export const load: PageServerLoad = async ({ url }) => {
   if (selectionIngredients.length === 0) {
     const allRecettes = await db.select().from(recettes);
     return {
-      recettes: allRecettes,
+      recettes: await ajouterNombreJaimes(allRecettes),
       ingredients: allIngredients,
       selectionIngredients,
     };
@@ -57,7 +83,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
   // Retourne les recettes filtrées, tous les ingrédients et les ingrédients sélectionnés pour l'affichage
   return {
-    recettes: filteredRecettes,
+    recettes: await ajouterNombreJaimes(filteredRecettes),
     ingredients: allIngredients,
     selectionIngredients,
   };
