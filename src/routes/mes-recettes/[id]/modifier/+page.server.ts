@@ -71,15 +71,24 @@ export const actions: Actions = {
 
     const titre = formData.get('titre')?.toString() ?? '';
     const description = formData.get('description')?.toString() ?? '';
-    const etapes = formData.get('etapes')?.toString() ?? '';
+
+    // Récupère chaque bloc d'étape envoyé par le formulaire (un champ "etape" par bloc),
+    // retire les blocs vides, puis reconstruit le texte numéroté stocké en base
+    const etapesListe = formData
+      .getAll('etape')
+      .map((e) => e.toString().trim())
+      .filter(Boolean);
+    const etapes = etapesListe.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
     const ingredientIds = formData.getAll('ingredient_id').map(Number);
     const quantites = formData.getAll('quantite').map(String);
     const unites = formData.getAll('unite').map(String);
 
-    // Vérifie que le titre et les étapes sont présents
-    if (!titre || !etapes) {
-      return fail(400, { message: 'Le titre et les étapes sont requis' });
+    // Vérifie que le titre et au moins une étape sont présents
+    if (!titre || etapesListe.length === 0) {
+      return fail(400, {
+        message: 'Le titre et au moins une étape sont requis',
+      });
     }
 
     // Met à jour la recette dans la base de données

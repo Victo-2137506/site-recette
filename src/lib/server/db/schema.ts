@@ -6,6 +6,7 @@ import {
   varchar,
   text,
   primaryKey,
+  timestamp,
 } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { utilisateurs } from './auth.schema';
@@ -42,28 +43,47 @@ export const recetteIngredients = mysqlTable(
     ingredientId: int('ingredient_id')
       .notNull()
       .references(() => ingredients.id, { onDelete: 'cascade' }),
-    // Quantité de l'ingrédient
     quantite: varchar('quantite', { length: 50 }).notNull(),
-
-    // Unité de mesure
     unite: varchar('unite', { length: 50 }),
   },
-  (table) => ({
+  (table) => [
     // Empêche qu'un même ingrédient soit associé plusieurs fois à une même recette.
-    pk: primaryKey({ columns: [table.recetteId, table.ingredientId] }),
-  }),
+    primaryKey({ columns: [table.recetteId, table.ingredientId] }),
+  ],
+);
+
+// Cette table contient les relations "j'aime" entre les utilisateurs et les recettes.
+export const jaime = mysqlTable(
+  'jaime',
+  {
+    utilisateurId: varchar('utilisateur_id', { length: 36 })
+      .notNull()
+      .references(() => utilisateurs.id, { onDelete: 'cascade' }),
+
+    recetteId: int('recette_id')
+      .notNull()
+      .references(() => recettes.id, { onDelete: 'cascade' }),
+
+    creeLe: timestamp('cree_le').defaultNow().notNull(),
+  },
+  (table) => [
+    // Empêche qu'un même utilisateur aime deux fois la même recette
+    primaryKey({ columns: [table.utilisateurId, table.recetteId] }),
+  ],
 );
 
 // --- Relation des tables ---
 
-// Une recette appartient à un utilisateur
-// et possède plusieurs associations avec des ingrédients.
+// Une recette appartient à un utilisateur,
+// possède plusieurs associations avec des ingrédients,
+// et peut être aimée par plusieurs utilisateurs.
 export const recettesRelations = relations(recettes, ({ one, many }) => ({
   utilisateur: one(utilisateurs, {
     fields: [recettes.utilisateurId],
     references: [utilisateurs.id],
   }),
   recetteIngredients: many(recetteIngredients),
+  jaime: many(jaime),
 }));
 
 // Un ingrédient peut être utilisé dans plusieurs recettes.
@@ -86,5 +106,18 @@ export const recetteIngredientsRelations = relations(
     }),
   }),
 );
+
+// Chaque ligne de la table jaime relie un utilisateur à une recette qu'il a aimée.
+export const jaimeRelations = relations(jaime, ({ one }) => ({
+  utilisateur: one(utilisateurs, {
+    fields: [jaime.utilisateurId],
+    references: [utilisateurs.id],
+  }),
+
+  recette: one(recettes, {
+    fields: [jaime.recetteId],
+    references: [recettes.id],
+  }),
+}));
 
 export * from './auth.schema';

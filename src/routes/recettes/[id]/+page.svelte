@@ -20,7 +20,6 @@
 
 	<p class="mb-5 text-gray-500">
 		Par
-
 		<!-- Lien vers le profil de l'auteur -->
 		<a	href="/profil/{recette.utilisateur.id}" class="font-semibold text-orange-600 no-underline hover:underline">
 			{recette.utilisateur.nom}

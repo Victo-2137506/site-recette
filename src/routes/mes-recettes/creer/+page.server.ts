@@ -32,7 +32,11 @@ export const actions: Actions = {
     // Récupère les champs principaux de la recette
     const titre = formData.get('titre')?.toString() ?? '';
     const description = formData.get('description')?.toString() ?? '';
-    const etapes = formData.get('etapes')?.toString() ?? '';
+    const etapesListe = formData
+      .getAll('etape')
+      .map((e) => e.toString().trim())
+      .filter(Boolean);
+    const etapes = etapesListe.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
     // Récupère les tableaux d'ingrédients sélectionnés (même index = même ingrédient)
     const ingredientIds = formData.getAll('ingredient_id').map(Number);
@@ -40,8 +44,10 @@ export const actions: Actions = {
     const unites = formData.getAll('unite').map(String);
 
     // Vérifie que le titre et les étapes sont présents
-    if (!titre || !etapes) {
-      return fail(400, { message: 'Le titre et les étapes sont requis' });
+    if (!titre || etapesListe.length === 0) {
+      return fail(400, {
+        message: 'Le titre et au moins une étape sont requis',
+      });
     }
 
     // Vérifie qu'au moins un ingrédient est sélectionné
