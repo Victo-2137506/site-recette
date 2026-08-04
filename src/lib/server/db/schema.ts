@@ -18,11 +18,25 @@ export const recettes = mysqlTable('recettes', {
   id: int('id').autoincrement().primaryKey(),
   titre: varchar('titre', { length: 255 }).notNull(),
   description: text('description'),
-  etapes: text('etapes').notNull(),
   // Référence vers l'utilisateur qui a créé la recette
   utilisateurId: varchar('utilisateur_id', { length: 36 })
     .notNull()
     .references(() => utilisateurs.id, { onDelete: 'cascade' }),
+});
+
+// Cette table contient les préparations d'une recette (ex. : "Pâte", "Garniture").
+// Une recette possède toujours au moins une préparation, ce qui permet de gérer
+// les recettes composées de plusieurs sous-parties distinctes.
+export const preparations = mysqlTable('preparations', {
+  id: int('id').autoincrement().primaryKey(),
+  nom: varchar('nom', { length: 255 }).notNull(),
+  // Contrôle l'ordre d'affichage des préparations (ex. : la pâte avant la garniture)
+  ordre: int('ordre').notNull().default(0),
+  etapes: text('etapes').notNull(),
+  // Référence vers la recette à laquelle appartient cette préparation
+  recetteId: int('recette_id')
+    .notNull()
+    .references(() => recettes.id, { onDelete: 'cascade' }),
 });
 
 // Cette table contient la liste des ingrédients disponibles
@@ -32,14 +46,14 @@ export const ingredients = mysqlTable('ingredients', {
   nom: varchar('nom', { length: 255 }).notNull().unique(),
 });
 
-// Une recette peut posséder plusieurs ingrédients et
-// un ingrédient peut être associé à plusieurs recettes.
+// Une préparation peut posséder plusieurs ingrédients et
+// un ingrédient peut être associé à plusieurs préparations.
 export const recetteIngredients = mysqlTable(
   'recette_ingredients',
   {
-    recetteId: int('recette_id')
+    preparationId: int('preparation_id')
       .notNull()
-      .references(() => recettes.id, { onDelete: 'cascade' }),
+      .references(() => preparations.id, { onDelete: 'cascade' }),
     ingredientId: int('ingredient_id')
       .notNull()
       .references(() => ingredients.id, { onDelete: 'cascade' }),
@@ -47,8 +61,8 @@ export const recetteIngredients = mysqlTable(
     unite: varchar('unite', { length: 50 }),
   },
   (table) => [
-    // Empêche qu'un même ingrédient soit associé plusieurs fois à une même recette.
-    primaryKey({ columns: [table.recetteId, table.ingredientId] }),
+    // Empêche qu'un même ingrédient soit associé plusieurs fois à une même préparation.
+    primaryKey({ columns: [table.preparationId, table.ingredientId] }),
   ],
 );
 
@@ -74,30 +88,42 @@ export const jaime = mysqlTable(
 
 // --- Relation des tables ---
 
-// Une recette appartient à un utilisateur,
-// possède plusieurs associations avec des ingrédients,
+// Une recette appartient à un utilisateur, possède plusieurs préparations,
 // et peut être aimée par plusieurs utilisateurs.
 export const recettesRelations = relations(recettes, ({ one, many }) => ({
   utilisateur: one(utilisateurs, {
     fields: [recettes.utilisateurId],
     references: [utilisateurs.id],
   }),
-  recetteIngredients: many(recetteIngredients),
+  preparations: many(preparations),
   jaime: many(jaime),
 }));
 
-// Un ingrédient peut être utilisé dans plusieurs recettes.
+// Une préparation appartient à une recette,
+// et possède plusieurs associations avec des ingrédients.
+export const preparationsRelations = relations(
+  preparations,
+  ({ one, many }) => ({
+    recette: one(recettes, {
+      fields: [preparations.recetteId],
+      references: [recettes.id],
+    }),
+    recetteIngredients: many(recetteIngredients),
+  }),
+);
+
+// Un ingrédient peut être utilisé dans plusieurs préparations.
 export const ingredientsRelations = relations(ingredients, ({ many }) => ({
   recetteIngredients: many(recetteIngredients),
 }));
 
-// Chaque ligne de la table recette_ingredients relie une recette à un ingrédient.
+// Chaque ligne de la table recette_ingredients relie une préparation à un ingrédient.
 export const recetteIngredientsRelations = relations(
   recetteIngredients,
   ({ one }) => ({
-    recette: one(recettes, {
-      fields: [recetteIngredients.recetteId],
-      references: [recettes.id],
+    preparation: one(preparations, {
+      fields: [recetteIngredients.preparationId],
+      references: [preparations.id],
     }),
 
     ingredient: one(ingredients, {

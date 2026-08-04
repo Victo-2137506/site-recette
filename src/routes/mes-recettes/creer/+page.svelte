@@ -1,22 +1,42 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { ActionData } from './$types';
-    
-    // Récupère les données et le formulaire depuis les props
+
+	// Récupère les données et le formulaire depuis les props
 	let { data, form }: { data: { ingredients: { id: number; nom: string }[] }; form: ActionData } =
 		$props();
 
-	let selection = $state(new Map<number, { quantite: string; unite: string }>());
-	let recherche = $state('');
+	// Structure d'une préparation : son nom, ses ingrédients sélectionnés,
+	// sa propre barre de recherche et ses propres étapes
+	type PreparationEtat = {
+		nom: string;
+		selection: Map<number, { quantite: string; unite: string }>;
+		recherche: string;
+		etapes: string[];
+	};
 
-	let ingredientsFiltres = $derived(
-		data.ingredients.filter((ing) => ing.nom.toLowerCase().includes(recherche.toLowerCase()))
-	);
+	function nouvellePreparation(): PreparationEtat {
+		return { nom: '', selection: new Map(), recherche: '', etapes: [''] };
+	}
 
-    // Récupère les ingrédients actuellement sélectionnés comme filtres actifs
-    // Reprend le même système de filtre dans la page générale.
-	function toggleIngredient(id: number) {
-		const copie = new Map(selection);
+	// Liste réactive des préparations, une recette contient toujours au moins une préparation
+	let preparationsListe = $state<PreparationEtat[]>([nouvellePreparation()]);
+
+	function ajouterPreparation() {
+		preparationsListe = [...preparationsListe, nouvellePreparation()];
+	}
+
+	function supprimerPreparation(index: number) {
+		if (preparationsListe.length > 1) {
+			preparationsListe = preparationsListe.filter((_, i) => i !== index);
+		}
+	}
+
+	// Récupère les ingrédients actuellement sélectionnés comme filtres actifs
+	// Reprend le même système de filtre dans la page générale.
+	function toggleIngredient(prepIndex: number, id: number) {
+		const prep = preparationsListe[prepIndex];
+		const copie = new Map(prep.selection);
 
 		if (copie.has(id)) {
 			copie.delete(id);
@@ -24,23 +44,23 @@
 			copie.set(id, { quantite: '', unite: '' });
 		}
 
-		selection = copie;
+		prep.selection = copie;
 	}
 
-	// Liste réactive des étapes, une chaîne par étape
-	let etapes = $state<string[]>(['']);
-
-	function ajouterEtape() {
-		etapes = [...etapes, ''];
+	// Ajoute une étape à la préparation concernée
+	function ajouterEtape(prepIndex: number) {
+		preparationsListe[prepIndex].etapes = [...preparationsListe[prepIndex].etapes, ''];
 	}
 
-	function supprimerEtape(index: number) {
-		if (etapes.length > 1) {
-			etapes = etapes.filter((_, i) => i !== index);
+	// Supprime une étape de la préparation concernée
+	function supprimerEtape(prepIndex: number, etapeIndex: number) {
+		const prep = preparationsListe[prepIndex];
+		if (prep.etapes.length > 1) {
+			prep.etapes = prep.etapes.filter((_, i) => i !== etapeIndex);
 		}
 	}
-    
-    // Élément style générer par Claude.IA
+
+	// Élément style générer par Claude.IA
 	const pillBase = 'rounded-full border px-3.5 py-1.5 text-sm transition cursor-pointer';
 	const pillInactive =
 		'bg-gray-100 border-gray-300 text-gray-800 hover:border-orange-600 hover:text-orange-600';
@@ -55,7 +75,7 @@
 
 <form method="post" use:enhance class="rounded-xl bg-white p-8 shadow-md">
 
-    <!-- Champ titre -->
+	<!-- Champ titre -->
 	<div class="mb-5 flex flex-col gap-1.5">
 		<label for="titre" class="text-sm font-semibold text-gray-800">Titre</label>
 		<input
@@ -66,7 +86,7 @@
 		/>
 	</div>
 
-    <!-- Champ description -->
+	<!-- Champ description -->
 	<div class="mb-5 flex flex-col gap-1.5">
 		<label for="description" class="text-sm font-semibold text-gray-800">Description</label>
 		<textarea
@@ -77,134 +97,178 @@
 		></textarea>
 	</div>
 
-    <!-- Champ ingrédients -->
-	<div class="mb-5">
-		<span class="mb-2 block text-sm font-semibold text-gray-800">Ingrédients</span>
+	<!-- Boucle sur chaque préparation : nom, ingrédients et étapes qui lui sont propres -->
+	{#each preparationsListe as prep, prepIndex}
+		{@const ingredientsFiltres = data.ingredients.filter((ing) =>
+			ing.nom.toLowerCase().includes(prep.recherche.toLowerCase())
+		)}
 
-		<input
-			type="text"
-			placeholder="Rechercher un ingrédient..."
-			bind:value={recherche}
-			class="mb-3 w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
-		/>
+		<div class="mb-6 rounded-lg border border-gray-200 p-5">
+			<!-- Nom de la préparation (ex: Pâte, Garniture) -->
+			<div class="mb-4 flex items-center gap-3">
+				<input
+					name="preparation_nom"
+					bind:value={prep.nom}
+					required
+					placeholder="Nom de la préparation (ex: Pâte, Garniture)"
+					class="flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 text-base font-semibold transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
+				/>
 
-        <!-- Liste des ingrédients filtrés -->
-		<div class="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
-			{#each ingredientsFiltres as ingredient}
-				<button
-					type="button"
-					class="{pillBase} {selection.has(ingredient.id) ? pillActive : pillInactive}"
-					onclick={() => toggleIngredient(ingredient.id)}
-				>
-					{ingredient.nom}
-				</button>
-			{:else}
-				<p class="py-2 text-sm text-gray-500">
-					Aucun ingrédient ne correspond à "{recherche}"
-				</p>
-			{/each}
-		</div>
+				{#if preparationsListe.length > 1}
+					<button
+						type="button"
+						onclick={() => supprimerPreparation(prepIndex)}
+						class="shrink-0 rounded-lg border border-red-300 px-3 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
+					>
+						Retirer cette préparation
+					</button>
+				{/if}
+			</div>
 
-        <!-- Affiche les ingrédients sélectionnés avec leurs quantités et unités -->
-		{#if selection.size > 0}
-			<div class="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4">
-				<span class="text-sm font-semibold text-gray-500">Ingrédients sélectionnés :</span>
+			<!-- Champ ingrédients -->
+			<span class="mb-2 block text-sm font-semibold text-gray-800">Ingrédients</span>
 
-				{#each [...selection.entries()] as [id, valeurs]}
-					{@const ingredient = data.ingredients.find((i) => i.id === id)}
-					<div class="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-						<span class="w-28 shrink-0 font-medium">{ingredient?.nom}</span>
+			<input
+				type="text"
+				placeholder="Rechercher un ingrédient..."
+				bind:value={prep.recherche}
+				class="mb-3 w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
+			/>
 
-						<input type="hidden" name="ingredient_id" value={id} />
-                        <!-- Les champs quantite -->
-						<input
-							type="number"
-							step="any"
-							name="quantite"
-							placeholder="Quantité (optionnel)"
-							bind:value={valeurs.quantite}
-							class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
-						/>
-
-						<!-- L'unité est également -->
-						<input
-							type="text"
-							name="unite"
-							placeholder="Unité (optionnel)"
-							bind:value={valeurs.unite}
-							class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
-						/>
-
-						<button
-							type="button"
-							class="ml-auto text-gray-400 hover:text-red-600"
-							aria-label="Retirer cet ingrédient"
-							onclick={() => toggleIngredient(id)}
-						>
-							✕
-						</button>
-					</div>
+			<!-- Liste des ingrédients filtrés -->
+			<div class="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
+				{#each ingredientsFiltres as ingredient}
+					<button
+						type="button"
+						class="{pillBase} {prep.selection.has(ingredient.id) ? pillActive : pillInactive}"
+						onclick={() => toggleIngredient(prepIndex, ingredient.id)}
+					>
+						{ingredient.nom}
+					</button>
+				{:else}
+					<p class="py-2 text-sm text-gray-500">
+						Aucun ingrédient ne correspond à "{prep.recherche}"
+					</p>
 				{/each}
 			</div>
-		{/if}
-	</div>
 
-    <!-- Champ étapes -->
-<div class="mb-6">
-	<span class="mb-2 block text-sm font-semibold text-gray-800">Étapes</span>
+			<!-- Affiche les ingrédients sélectionnés avec leurs quantités et unités -->
+			{#if prep.selection.size > 0}
+				<div class="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4">
+					<span class="text-sm font-semibold text-gray-500">Ingrédients sélectionnés :</span>
 
-	<div class="flex flex-col gap-3">
-		{#each etapes as etape, i}
-			<div class="flex items-start gap-2">
-				<span class="mt-2.5 w-6 shrink-0 text-right font-semibold text-orange-600">{i + 1}.</span>
+					{#each [...prep.selection.entries()] as [id, valeurs]}
+						{@const ingredient = data.ingredients.find((i) => i.id === id)}
+						<div class="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
+							<span class="w-28 shrink-0 font-medium">{ingredient?.nom}</span>
 
-				<textarea
-					name="etape"
-					rows="2"
-					required
-					bind:value={etapes[i]}
-					placeholder="Décris cette étape..."
-					class="flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 text-base transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
-				></textarea>
+							<!-- Indique à quelle préparation appartient cet ingrédient -->
+							<input type="hidden" name="preparation_index" value={prepIndex} />
+							<input type="hidden" name="ingredient_id" value={id} />
+
+							<!-- Les champs quantite -->
+							<input
+								type="number"
+								step="any"
+								name="quantite"
+								placeholder="Quantité (optionnel)"
+								bind:value={valeurs.quantite}
+								class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+							/>
+
+							<!-- L'unité est également -->
+							<input
+								type="text"
+								name="unite"
+								placeholder="Unité (optionnel)"
+								bind:value={valeurs.unite}
+								class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+							/>
+
+							<button
+								type="button"
+								class="ml-auto text-gray-400 hover:text-red-600"
+								aria-label="Retirer cet ingrédient"
+								onclick={() => toggleIngredient(prepIndex, id)}
+							>
+								✕
+							</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Champ étapes -->
+			<div class="mt-5">
+				<span class="mb-2 block text-sm font-semibold text-gray-800">Étapes</span>
+
+				<div class="flex flex-col gap-3">
+					{#each prep.etapes as etape, etapeIndex}
+						<div class="flex items-start gap-2">
+							<span class="mt-2.5 w-6 shrink-0 text-right font-semibold text-orange-600">
+								{etapeIndex + 1}.
+							</span>
+
+							<!-- Indique à quelle préparation appartient cette étape -->
+							<input type="hidden" name="etape_preparation_index" value={prepIndex} />
+
+							<textarea
+								name="etape"
+								rows="2"
+								bind:value={prep.etapes[etapeIndex]}
+								placeholder="Décris cette étape..."
+								class="flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 text-base transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
+							></textarea>
+
+							<button
+								type="button"
+								onclick={() => supprimerEtape(prepIndex, etapeIndex)}
+								disabled={prep.etapes.length === 1}
+								class="mt-2 shrink-0 rounded-full border border-gray-300 px-2.5 py-0.5 text-gray-500 transition hover:border-red-600 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+								aria-label="Supprimer cette étape"
+							>
+								−
+							</button>
+						</div>
+					{/each}
+				</div>
 
 				<button
 					type="button"
-					onclick={() => supprimerEtape(i)}
-					disabled={etapes.length === 1}
-					class="mt-2 shrink-0 rounded-full border border-gray-300 px-2.5 py-0.5 text-gray-500 transition hover:border-red-600 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
-					aria-label="Supprimer cette étape"
+					onclick={() => ajouterEtape(prepIndex)}
+					class="mt-3 rounded-lg border border-orange-600 px-4 py-1.5 text-sm text-orange-600 transition hover:bg-orange-600 hover:text-white"
 				>
-					−
+					Ajouter une étape
 				</button>
 			</div>
-		{/each}
-	</div>
+		</div>
+	{/each}
 
+	<!-- Bouton pour ajouter une nouvelle préparation à la recette -->
 	<button
 		type="button"
-		onclick={ajouterEtape}
-		class="mt-3 rounded-lg border border-orange-600 px-4 py-1.5 text-sm text-orange-600 transition hover:bg-orange-600 hover:text-white"
+		onclick={ajouterPreparation}
+		class="mb-6 rounded-lg border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
 	>
-		Ajouter une étape
+		+ Ajouter une préparation
 	</button>
-</div>
 
-    <!-- Affiche le message d'erreur renvoyé par fail() côté serveur, s'il y en a un -->
+	<!-- Affiche le message d'erreur renvoyé par fail() côté serveur, s'il y en a un -->
 	{#if form?.message}
 		<p class="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-center text-sm text-red-700">
 			{form.message}
 		</p>
 	{/if}
 
-<div class="flex gap-3">
-	<button
-		type="submit" class="rounded-lg bg-orange-600 px-6 py-2.5 font-medium text-white transition hover:bg-orange-700">
-		Créer la recette
-	</button>
+	<div class="flex gap-3">
+		<button
+			type="submit" class="rounded-lg bg-orange-600 px-6 py-2.5 font-medium text-white transition hover:bg-orange-700">
+			Créer la recette
+		</button>
 
-	
-	<a href="/mes-recettes" class="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-600 transition hover:bg-gray-100">
-		Annuler
-	</a>
-</div>
+
+		<a href="/mes-recettes" class="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-600 transition hover:bg-gray-100">
+			Annuler
+		</a>
+	</div>
 </form>

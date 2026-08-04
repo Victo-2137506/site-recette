@@ -6,6 +6,13 @@
 
 	// Récupère la première lettre du nom pour l'afficher dans l'avatar rond
 	const initiale = data.user.name.charAt(0).toUpperCase();
+
+	// Onglet actuellement affiché : 'mes-recettes' ou 'aimees'
+	let ongletActif = $state<'mes-recettes' | 'aimees'>('mes-recettes');
+
+	const tabBase = 'px-4 py-2.5 text-sm font-semibold transition border-b-2';
+	const tabActive = 'border-orange-600 text-orange-600';
+	const tabInactive = 'border-transparent text-gray-500 hover:text-orange-600';
 </script>
 
 <svelte:head>
@@ -20,31 +27,61 @@
 
 	<div>
 		<h1 class="text-2xl font-bold text-orange-700">{data.user.name}</h1>
+		<p class="text-sm text-gray-500">ID: {data.user.id}</p>
 	</div>
-
-	<!-- <form method="post" action="?/signOut" use:enhance class="ml-auto">
-		<button type="submit" class="rounded-lg border border-orange-600 px-4 py-2 text-orange-600 transition hover:bg-orange-600 hover:text-white">
-			Se déconnecter
-		</button>
-	</form> -->
 </div>
 
-<h2 class="mb-4 text-xl font-bold text-orange-700">Mes recettes</h2>
+<!-- Barre d'onglets -->
+<div class="mb-6 flex gap-2 border-b border-gray-200">
+	<button
+		type="button"
+		class="{tabBase} {ongletActif === 'mes-recettes' ? tabActive : tabInactive}"
+		onclick={() => (ongletActif = 'mes-recettes')}
+	>
+		Mes recettes ({data.recettes.length})
+	</button>
 
-<!-- Affiche la liste des recettes de l'utilisateur ou un message si aucune recette n'est trouvée -->
-<div class="flex flex-col gap-5">
-	<!-- Parcourt les recettes de l'utilisateur et les affiche -->
-	{#each data.recettes as recette}
-		<!-- Chaque recette est un lien vers sa page de détails -->
-		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
-			<div class="rounded-xl bg-white p-5 shadow-md">
-				<h3 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h3>
-				<p class="text-gray-500">{recette.description}</p>
+	<button
+		type="button"
+		class="{tabBase} {ongletActif === 'aimees' ? tabActive : tabInactive}"
+		onclick={() => (ongletActif = 'aimees')}
+	>
+		Recettes aimées ({data.recettesAimees.length})
+	</button>
+</div>
+
+<!-- Contenu de l'onglet "Mes recettes" -->
+{#if ongletActif === 'mes-recettes'}
+	<div class="flex flex-col gap-5">
+		{#each data.recettes as recette}
+			<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
+				<div class="rounded-xl bg-white p-5 shadow-md">
+					<h3 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h3>
+					<p class="text-gray-500">{recette.description}</p>
+				</div>
+			</a>
+		{:else}
+			<div class="rounded-xl bg-white p-10 text-center shadow-md">
+				<p class="text-lg font-semibold text-gray-800">Tu n'as pas encore créé de recette</p>
 			</div>
-		</a>
-	{:else}
-		<div class="rounded-xl bg-white p-10 text-center shadow-md">
-			<p class="text-lg font-semibold text-gray-800">Tu n'as pas encore créé de recette</p>
-		</div>
-	{/each}
-</div>
+		{/each}
+	</div>
+{/if}
+
+<!-- Contenu de l'onglet "Recettes aimées" -->
+{#if ongletActif === 'aimees'}
+	<div class="flex flex-col gap-5">
+		{#each data.recettesAimees as recette}
+			<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
+				<div class="rounded-xl bg-white p-5 shadow-md">
+					<h3 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h3>
+					<p class="text-gray-500">{recette.description}</p>
+				</div>
+			</a>
+		{:else}
+			<div class="rounded-xl bg-white p-10 text-center shadow-md">
+				<p class="text-lg font-semibold text-gray-800">Tu n'as encore aimé aucune recette</p>
+			</div>
+		{/each}
+	</div>
+{/if}

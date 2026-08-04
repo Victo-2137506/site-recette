@@ -15,7 +15,7 @@
 	Retour aux recettes
 </a>
 
-<!-- Affiche les détails de la recette, le titre, l'auteur, la description, les ingrédients et les étapes -->
+<!-- Affiche les détails de la recette, le titre, l'auteur, la description, et chacune de ses préparations -->
 <article class="rounded-xl bg-white p-8 shadow-md">
 	<h1 class="mb-2.5 text-3xl font-bold text-orange-700">{recette.titre}</h1>
 
@@ -42,25 +42,28 @@
 		<p class="mb-6 text-gray-500">{recette.description}</p>
 	{/if}
 
-	<section class="mt-7">
-		<h2 class="mb-3 border-b border-gray-200 pb-2 text-lg font-bold text-orange-700">
-			Ingrédients
-		</h2>
-		<ul class="flex flex-col gap-2">
-			{#each recette.recetteIngredients as ri}
-		<!-- &nbsp;—&nbsp générer par Claude.IA -->
-		<li class="rounded-lg bg-gray-100 px-3 py-2">
-			{#if ri.quantite}{ri.quantite}{#if ri.unite}&nbsp;{ri.unite}{/if}&nbsp;—&nbsp;{/if}{ri.ingredient.nom}
-		</li>
-			{/each}
-		</ul>
-	</section>
+	<!-- Boucle sur chaque préparation de la recette (ex: Pâte, Garniture) -->
+	{#each recette.preparations as preparation}
+		<section class="mt-7">
+			<h2 class="mb-3 border-b border-gray-200 pb-2 text-lg font-bold text-orange-700">
+				{preparation.nom}
+			</h2>
 
-	<section class="mt-7">
-		<h2 class="mb-3 border-b border-gray-200 pb-2 text-lg font-bold text-orange-700">
-			Étapes
-		</h2>
-		<!-- whitespace générer par Claude.IA -->
-		<p class="whitespace-pre-line leading-relaxed">{recette.etapes}</p>
-	</section>
+			<!-- Ingrédients propres à cette préparation -->
+			<p class="mb-2 text-sm font-semibold text-gray-500">Ingrédients</p>
+			<ul class="mb-4 flex flex-col gap-2">
+				{#each preparation.recetteIngredients as ri}
+					<!-- &nbsp;—&nbsp générer par Claude.IA -->
+					<li class="rounded-lg bg-gray-100 px-3 py-2">
+						{#if ri.quantite}{ri.quantite}{#if ri.unite}&nbsp;{ri.unite}{/if}&nbsp;—&nbsp;{/if}{ri.ingredient.nom}
+					</li>
+				{/each}
+			</ul>
+
+			<!-- Étapes propres à cette préparation -->
+			<p class="mb-2 text-sm font-semibold text-gray-500">Étapes</p>
+			<!-- whitespace générer par Claude.IA -->
+			<p class="whitespace-pre-line leading-relaxed">{preparation.etapes}</p>
+		</section>
+	{/each}
 </article>

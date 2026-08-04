@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import {
   recettes,
+  preparations,
   ingredients,
   recetteIngredients,
   jaime,
@@ -54,12 +55,19 @@ export const load: PageServerLoad = async ({ url }) => {
     };
   }
 
-  // Trouver les recettes qui contiennent TOUS les ingrédients cochés
+  // Trouver les recettes qui contiennent TOUS les ingrédients cochés.
+  // On passe par une jointure recette_ingredients → preparations, puisque
+  // les ingrédients sont maintenant rattachés à une préparation, pas
+  // directement à une recette.
   const rows = await db
     .select({
-      recetteId: recetteIngredients.recetteId,
+      recetteId: preparations.recetteId,
     })
     .from(recetteIngredients)
+    .innerJoin(
+      preparations,
+      eq(preparations.id, recetteIngredients.preparationId),
+    )
     .where(inArray(recetteIngredients.ingredientId, selectionIngredients));
 
   // Compter combien d'ingrédients cochés chaque recette possède
