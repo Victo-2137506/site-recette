@@ -45,10 +45,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   // Récupère tous les ingrédients disponibles pour le formulaire de modification
   const tousLesIngredients = await db.select().from(ingredients);
 
+  // Retourne la recette et la liste des ingrédients
   return { recette, ingredients: tousLesIngredients };
 };
 
-// Une préparation entièrement validée, prête à être insérée telle quelle.
+// Code générer par Claude.IA pour gérer la modification d'une recette
 type PreparationAEnregistrer = {
   nom: string;
   ordre: number;
@@ -121,15 +122,12 @@ export const actions: Actions = {
       return fail(400, { message: 'Chaque préparation doit avoir un nom' });
     }
 
-    // Assemble et valide toutes les préparations AVANT la moindre écriture.
-    // C'est essentiel ici : la mise à jour commence par supprimer les
-    // préparations existantes, et un refus détecté après coup laisserait la
-    // recette amputée de son contenu d'origine.
+    // Code générer par Claude.IA pour valider les étapes et les ingrédients de chaque préparation
     const preparationsAEnregistrer: PreparationAEnregistrer[] = [];
 
+    // Pour chaque préparation, on vérifie qu'elle a au moins une étape et on regroupe les ingrédients associés
     for (let i = 0; i < preparationNoms.length; i++) {
-      // Ne garde que les étapes appartenant à cette préparation, en écartant
-      // les blocs laissés vides dans le formulaire
+      // Retrouve les étapes appartenant à cette préparation
       const etapesDeCettePrep = etapesTexte.filter(
         (_, j) => etapesPrepIndex[j] === i && etapesTexte[j],
       );
@@ -146,11 +144,14 @@ export const actions: Actions = {
         .map((prepIndex, k) => (prepIndex === i ? k : -1))
         .filter((k) => k !== -1);
 
+      // Code générer par Claude.IA pour construire la préparation à enregistrer
       preparationsAEnregistrer.push({
         nom: preparationNoms[i],
         ordre: i,
         // Reconstruit le texte numéroté des étapes de cette préparation
-        etapes: etapesDeCettePrep.map((e, idx) => `${idx + 1}. ${e}`).join('\n'),
+        etapes: etapesDeCettePrep
+          .map((e, idx) => `${idx + 1}. ${e}`)
+          .join('\n'),
         ingredients: indicesIngredients.map((k) => ({
           ingredientId: ingredientIds[k],
           quantite: quantites[k]?.trim() || '',
@@ -165,8 +166,7 @@ export const actions: Actions = {
       .set({ titre, description })
       .where(eq(recettes.id, id));
 
-    // Supprime toutes les anciennes préparations (les anciens ingrédients associés
-    // partent automatiquement avec, grâce à la suppression en cascade)
+    // Supprime toutes les anciennes préparations
     await db.delete(preparations).where(eq(preparations.recetteId, id));
 
     // Recrée chaque préparation, avec ses propres étapes et ses propres ingrédients
@@ -190,6 +190,7 @@ export const actions: Actions = {
       }
     }
 
+    // Redirige vers la page de la recette modifiée après la modification
     throw redirect(303, `/recettes/${id}`);
   },
 };

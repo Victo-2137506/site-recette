@@ -42,6 +42,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   // Vérifie si l'utilisateur actuellement connecté a déjà aimé cette recette
   let dejaAime = false;
 
+  // Si l'utilisateur est connecté, vérifie s'il a déjà aimé la recette
   if (locals.user) {
     const likeExistant = await db.query.jaime.findFirst({
       where: and(
@@ -66,8 +67,10 @@ export const actions: Actions = {
       });
     }
 
+    // Récupère l'ID de la recette à partir des paramètres de l'URL
     const id = Number(params.id);
 
+    // Vérifie si l'ID est un nombre valide
     if (Number.isNaN(id)) {
       return fail(400, { message: 'Recette invalide' });
     }
@@ -80,15 +83,16 @@ export const actions: Actions = {
       ),
     });
 
+    // Si le like existe déjà, on le supprime, sinon on l'ajoute
     if (likeExistant) {
-      // Déjà aimé → on retire le like
+      // Déjà aimé, on retire le like
       await db
         .delete(jaime)
         .where(
           and(eq(jaime.recetteId, id), eq(jaime.utilisateurId, locals.user.id)),
         );
     } else {
-      // Pas encore aimé → on l'ajoute
+      // Pas encore aimé, on l'ajoute
       await db.insert(jaime).values({
         recetteId: id,
         utilisateurId: locals.user.id,

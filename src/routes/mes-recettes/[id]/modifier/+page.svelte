@@ -6,8 +6,7 @@
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	// Reconstruit la liste des étapes à partir du texte stocké en base,
-	// en retirant le préfixe numéroté ("1. ", "2. ", etc.) ajouté à la création
+	// Reconstruit la liste des étapes
 	function parserEtapes(texte: string): string[] {
 		const lignes = texte
 			.split('\n')
@@ -17,8 +16,7 @@
 		return lignes.length > 0 ? lignes : [''];
 	}
 
-	// Structure d'une préparation : son nom, ses ingrédients sélectionnés,
-	// sa propre barre de recherche et ses propres étapes
+	// Structure d'une préparation
 	type PreparationEtat = {
 		nom: string;
 		selection: Map<number, { quantite: string; unite: string }>;
@@ -41,14 +39,17 @@
 		}))
 	);
 
+	// Crée une nouvelle préparation vide
 	function nouvellePreparation(): PreparationEtat {
 		return { nom: '', selection: new Map(), recherche: '', etapes: [''] };
 	}
 
+	// Ajoute une nouvelle préparation à la liste
 	function ajouterPreparation() {
 		preparationsListe = [...preparationsListe, nouvellePreparation()];
 	}
 
+	// Supprime une préparation de la liste
 	function supprimerPreparation(index: number) {
 		if (preparationsListe.length > 1) {
 			preparationsListe = preparationsListe.filter((_, i) => i !== index);
@@ -71,10 +72,12 @@
 		prep.selection = copie;
 	}
 
+	// Fonction pour ajouter une nouvelle étape à une préparation
 	function ajouterEtape(prepIndex: number) {
 		preparationsListe[prepIndex].etapes = [...preparationsListe[prepIndex].etapes, ''];
 	}
 
+	// Fonction pour supprimer une étape d'une préparation
 	function supprimerEtape(prepIndex: number, etapeIndex: number) {
 		const prep = preparationsListe[prepIndex];
 		if (prep.etapes.length > 1) {
@@ -138,6 +141,7 @@
 					class="flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 text-base font-semibold transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
 				/>
 
+				<!-- Bouton pour supprimer la préparation -->
 				{#if preparationsListe.length > 1}
 					<button
 						type="button"
@@ -152,6 +156,7 @@
 			<!-- Section pour gérer les ingrédients associés à cette préparation -->
 			<span class="mb-2 block text-sm font-semibold text-gray-800">Ingrédients</span>
 
+			<!-- Champ de recherche pour filtrer les ingrédients -->
 			<input
 				type="text"
 				placeholder="Rechercher un ingrédient..."
@@ -191,6 +196,7 @@
 							<input type="hidden" name="preparation_index" value={prepIndex} />
 							<input type="hidden" name="ingredient_id" value={id} />
 
+							<!-- Champ pour la quantité -->
 							<input
 								type="number"
 								step="any"
@@ -200,6 +206,7 @@
 								class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
 							/>
 
+							<!-- Champ pour l'unité -->
 							<input
 								type="text"
 								name="unite"
@@ -208,6 +215,7 @@
 								class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
 							/>
 
+							<!-- Bouton pour retirer l'ingrédient -->
 							<button
 								type="button"
 								class="ml-auto text-gray-400 hover:text-red-600"
@@ -225,6 +233,7 @@
 			<div class="mt-5">
 				<span class="mb-2 block text-sm font-semibold text-gray-800">Étapes</span>
 
+				<!-- Boucle sur chaque étape de la préparation -->
 				<div class="flex flex-col gap-3">
 					{#each prep.etapes as etape, etapeIndex}
 						<div class="flex items-start gap-2">
@@ -235,6 +244,7 @@
 							<!-- Indique à quelle préparation appartient cette étape -->
 							<input type="hidden" name="etape_preparation_index" value={prepIndex} />
 
+							<!-- Champ pour décrire l'étape -->
 							<textarea
 								name="etape"
 								rows="2"
@@ -243,6 +253,7 @@
 								class="flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 text-base transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
 							></textarea>
 
+							 <!-- Bouton pour supprimer l'étape -->
 							<button
 								type="button"
 								onclick={() => supprimerEtape(prepIndex, etapeIndex)}
@@ -256,6 +267,7 @@
 					{/each}
 				</div>
 
+				<!-- Bouton pour ajouter une nouvelle étape à cette préparation -->
 				<button
 					type="button"
 					onclick={() => ajouterEtape(prepIndex)}
@@ -273,7 +285,7 @@
 		onclick={ajouterPreparation}
 		class="mb-6 rounded-lg border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
 	>
-		+ Ajouter une préparation
+		Ajouter une préparation
 	</button>
 
     <!-- Affiche un message d'erreur si la modification échoue -->
@@ -283,13 +295,14 @@
 		</p>
 	{/if}
 
+	<!-- Boutons enregistrer-->
 <div class="flex gap-3">
 	<button
 		type="submit" class="rounded-lg bg-orange-600 px-6 py-2.5 font-medium text-white transition hover:bg-orange-700">
 		Enregistrer les modifications
 	</button>
 
-
+	<!-- Bouton annuler-->
 	<a href="/mes-recettes" class="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-600 transition hover:bg-gray-100">
 		Annuler
 	</a>

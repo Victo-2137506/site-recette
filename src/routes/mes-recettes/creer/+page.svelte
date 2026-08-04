@@ -157,7 +157,9 @@
 				<div class="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4">
 					<span class="text-sm font-semibold text-gray-500">Ingrédients sélectionnés :</span>
 
+					<!-- Boucle sur chaque ingrédient sélectionné pour cette préparation -->
 					{#each [...prep.selection.entries()] as [id, valeurs]}
+					<!-- @const permet de stocker une valeur calculée dans une variable locale afin d'éviter de recalculer la même valeur plusieurs fois  : https://svelte.dev/docs/svelte/@const -->
 						{@const ingredient = data.ingredients.find((i) => i.id === id)}
 						<div class="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
 							<span class="w-28 shrink-0 font-medium">{ingredient?.nom}</span>
@@ -185,6 +187,7 @@
 								class="w-32 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
 							/>
 
+							<!-- Bouton pour retirer cet ingrédient et 'X'générer par Claude.IA -->
 							<button
 								type="button"
 								class="ml-auto text-gray-400 hover:text-red-600"
@@ -202,6 +205,7 @@
 			<div class="mt-5">
 				<span class="mb-2 block text-sm font-semibold text-gray-800">Étapes</span>
 
+				<!-- Boucle sur chaque étape de la préparation -->
 				<div class="flex flex-col gap-3">
 					{#each prep.etapes as etape, etapeIndex}
 						<div class="flex items-start gap-2">
@@ -212,6 +216,7 @@
 							<!-- Indique à quelle préparation appartient cette étape -->
 							<input type="hidden" name="etape_preparation_index" value={prepIndex} />
 
+							<!-- Champ texte pour décrire l'étape -->
 							<textarea
 								name="etape"
 								rows="2"
@@ -220,6 +225,7 @@
 								class="flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 text-base transition focus:border-orange-600 focus:outline-none focus:ring-3 focus:ring-orange-600/15"
 							></textarea>
 
+							<!-- Bouton pour supprimer cette étape -->
 							<button
 								type="button"
 								onclick={() => supprimerEtape(prepIndex, etapeIndex)}
@@ -233,6 +239,7 @@
 					{/each}
 				</div>
 
+				<!-- Bouton pour ajouter une nouvelle étape à cette préparation -->
 				<button
 					type="button"
 					onclick={() => ajouterEtape(prepIndex)}
@@ -250,7 +257,7 @@
 		onclick={ajouterPreparation}
 		class="mb-6 rounded-lg border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
 	>
-		+ Ajouter une préparation
+		Ajouter une préparation
 	</button>
 
 	<!-- Affiche le message d'erreur renvoyé par fail() côté serveur, s'il y en a un -->
@@ -260,12 +267,12 @@
 		</p>
 	{/if}
 
+	<!-- Boutons de soumission et d'annulation -->
 	<div class="flex gap-3">
 		<button
 			type="submit" class="rounded-lg bg-orange-600 px-6 py-2.5 font-medium text-white transition hover:bg-orange-700">
 			Créer la recette
 		</button>
-
 
 		<a href="/mes-recettes" class="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-600 transition hover:bg-gray-100">
 			Annuler

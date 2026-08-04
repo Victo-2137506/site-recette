@@ -1,4 +1,4 @@
-// Lien de la documentation offciel pour le schema : https://orm.drizzle.team/docs/sql-schema-declaration
+// Lien de la documentation officiel pour le schema : https://orm.drizzle.team/docs/sql-schema-declaration
 // Lien de la documentation officiel pour les relations : https://orm.drizzle.team/docs/relations-schema-declaration#why-foreign-keys
 import {
   mysqlTable,
@@ -24,9 +24,7 @@ export const recettes = mysqlTable('recettes', {
     .references(() => utilisateurs.id, { onDelete: 'cascade' }),
 });
 
-// Cette table contient les préparations d'une recette (ex. : "Pâte", "Garniture").
-// Une recette possède toujours au moins une préparation, ce qui permet de gérer
-// les recettes composées de plusieurs sous-parties distinctes.
+// Cette table contient les préparations d'une recette.
 export const preparations = mysqlTable('preparations', {
   id: int('id').autoincrement().primaryKey(),
   nom: varchar('nom', { length: 255 }).notNull(),
@@ -39,15 +37,13 @@ export const preparations = mysqlTable('preparations', {
     .references(() => recettes.id, { onDelete: 'cascade' }),
 });
 
-// Cette table contient la liste des ingrédients disponibles
-// (ex. : Poulet, Pâtes, Soja, Riz...).
+// Cette table contient la liste des ingrédients
 export const ingredients = mysqlTable('ingredients', {
   id: int('id').autoincrement().primaryKey(),
   nom: varchar('nom', { length: 255 }).notNull().unique(),
 });
 
-// Une préparation peut posséder plusieurs ingrédients et
-// un ingrédient peut être associé à plusieurs préparations.
+// Une préparation peut posséder plusieurs ingrédients et un ingrédient peut être associé à plusieurs préparations
 export const recetteIngredients = mysqlTable(
   'recette_ingredients',
   {
@@ -88,8 +84,7 @@ export const jaime = mysqlTable(
 
 // --- Relation des tables ---
 
-// Une recette appartient à un utilisateur, possède plusieurs préparations,
-// et peut être aimée par plusieurs utilisateurs.
+// Une recette appartient à un utilisateur, possède plusieurs préparations et peut être aimée par plusieurs utilisateurs.
 export const recettesRelations = relations(recettes, ({ one, many }) => ({
   utilisateur: one(utilisateurs, {
     fields: [recettes.utilisateurId],
@@ -99,8 +94,7 @@ export const recettesRelations = relations(recettes, ({ one, many }) => ({
   jaime: many(jaime),
 }));
 
-// Une préparation appartient à une recette,
-// et possède plusieurs associations avec des ingrédients.
+// Une préparation appartient à une recette et possède plusieurs ingrédients.
 export const preparationsRelations = relations(
   preparations,
   ({ one, many }) => ({

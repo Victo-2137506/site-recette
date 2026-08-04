@@ -17,8 +17,10 @@
 		{initiale}
 	</div>
 
+	<!-- Affiche le nom et l'ID de l'utilisateur -->
 	<div>
 		<h1 class="text-2xl font-bold text-orange-700">{utilisateur.nom}</h1>
+		<p class="text-sm text-gray-500">ID: {utilisateur.id}</p>
 	</div>
 </div>
 
@@ -26,8 +28,11 @@
 
 <!-- Affiche la liste des recettes de l'utilisateur ou un message si aucune recette n'est trouvée -->
 <div class="flex flex-col gap-5">
+
+	<!-- Boucle sur chaque recette de l'utilisateur pour les afficher -->
 	{#each data.recettes as recette}
 		<a href="/recettes/{recette.id}" class="block text-inherit no-underline">
+			<!-- Chaque recette est affichée dans une carte avec un lien vers la page de détails -->
 			<div class="rounded-xl bg-white p-5 shadow-md">
 				<h3 class="mb-2.5 text-lg font-bold text-orange-700">{recette.titre}</h3>
 				<p class="text-gray-500">{recette.description}</p>

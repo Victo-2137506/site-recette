@@ -67,6 +67,7 @@
 		</div>
 	</header>
 
+	<!-- Contenu principal -->
 	<main class="mx-auto w-full max-w-7xl flex-1 px-5">{@render children()}</main>
 
 	<footer class="mt-10 border-t border-gray-200 bg-white px-5 py-5 text-center text-sm text-gray-500">

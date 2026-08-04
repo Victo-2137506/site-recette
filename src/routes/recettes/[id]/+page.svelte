@@ -37,7 +37,7 @@
 			</button>
 	</form>
 
-
+	<!-- Description de la recette -->
 	{#if recette.description}
 		<p class="mb-6 text-gray-500">{recette.description}</p>
 	{/if}

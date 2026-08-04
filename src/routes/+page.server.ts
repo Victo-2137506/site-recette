@@ -17,6 +17,7 @@ async function ajouterNombreJaimes(
     return [];
   }
 
+  // Récupère les IDs des recettes
   const idsRecettes = recettesListe.map((r) => r.id);
 
   // Compte les likes pour chaque recette d'un coup, plutôt qu'une requête par recette
@@ -55,10 +56,7 @@ export const load: PageServerLoad = async ({ url }) => {
     };
   }
 
-  // Trouver les recettes qui contiennent TOUS les ingrédients cochés.
-  // On passe par une jointure recette_ingredients → preparations, puisque
-  // les ingrédients sont maintenant rattachés à une préparation, pas
-  // directement à une recette.
+  // Récupère les recettes qui contiennent tous les ingrédients sélectionnés
   const rows = await db
     .select({
       recetteId: preparations.recetteId,
@@ -71,9 +69,7 @@ export const load: PageServerLoad = async ({ url }) => {
     )
     .where(inArray(recetteIngredients.ingredientId, selectionIngredients));
 
-  // Rassembler, pour chaque recette, les ingrédients cochés qu'elle contient.
-  // On passe par un Set : un même ingrédient peut apparaître dans plusieurs
-  // préparations d'une même recette, et il ne doit compter qu'une fois.
+  // Trouver les ingredients trouvés pour chaque recette
   const ingredientsParRecette = new Map<number, Set<number>>();
 
   // Parcourt les lignes récupérées et note l'ingrédient trouvé pour sa recette

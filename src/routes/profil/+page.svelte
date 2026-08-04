@@ -25,6 +25,7 @@
 		{initiale}
 	</div>
 
+	<!-- Affiche le nom et l'ID de l'utilisateur -->
 	<div>
 		<h1 class="text-2xl font-bold text-orange-700">{data.user.name}</h1>
 		<p class="text-sm text-gray-500">ID: {data.user.id}</p>
@@ -33,6 +34,8 @@
 
 <!-- Barre d'onglets -->
 <div class="mb-6 flex gap-2 border-b border-gray-200">
+
+	<!-- Bouton pour l'onglet "Mes recettes" -->
 	<button
 		type="button"
 		class="{tabBase} {ongletActif === 'mes-recettes' ? tabActive : tabInactive}"
@@ -41,6 +44,7 @@
 		Mes recettes ({data.recettes.length})
 	</button>
 
+	<!-- Bouton pour l'onglet "Recettes aimées" -->
 	<button
 		type="button"
 		class="{tabBase} {ongletActif === 'aimees' ? tabActive : tabInactive}"

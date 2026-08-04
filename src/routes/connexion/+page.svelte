@@ -44,7 +44,7 @@
 				/>
 			</div>
 
-			<!-- Champ nom : seulement utile pour l'inscription, ignoré côté serveur pour la connexion -->
+			<!-- Champ nom : seulement pour l'inscription -->
 			<div class="mb-4 flex flex-col gap-1.5">
 				<label for="name" class="text-sm font-semibold text-gray-800">Nom (pour l'inscription)</label>
 				<input
@@ -55,7 +55,7 @@
 			</div>
 
 			<div class="mt-6 flex flex-col gap-2.5">
-				<!-- Bouton par défaut du formulaire : déclenche l'action "signInEmail" -->
+				<!-- Bouton du formulaire (Better-Auth), déclenche l'action "signInEmail" -->
 				<button
 					type="submit"
 					class="rounded-lg bg-orange-600 px-4 py-2.5 font-medium text-white transition hover:bg-orange-700"
@@ -63,7 +63,7 @@
 					Se connecter
 				</button>
 
-				<!-- formaction override l'action du <form> uniquement pour ce bouton -->
+				<!-- Bouton d'inscription -->
 				<button
 					type="submit"
 					formaction="?/signUpEmail"
@@ -74,7 +74,7 @@
 			</div>
 		</form>
 
-		<!-- Affiche le message d'erreur renvoyé par fail() côté serveur, s'il y en a un -->
+		<!-- Affiche le message d'erreur -->
 		{#if form?.message}
 			<p class="mt-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-center text-sm text-red-700">
 				{form.message}

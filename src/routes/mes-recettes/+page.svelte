@@ -43,8 +43,10 @@
 							}
 						}}
 					>
-
+					<!-- Champ caché pour l'ID de la recette -->
 					<input type="hidden" name="id" value={recette.id} />
+					
+					<!-- Bouton supprimer -->
 					<button
 						type="submit"
 						class="rounded-lg border border-red-600 px-4 py-1.5 text-sm text-red-600 transition hover:bg-red-600 hover:text-white"

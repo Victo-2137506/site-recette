@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   return { ingredients: tousLesIngredients };
 };
 
-// Une préparation entièrement validée, prête à être insérée telle quelle.
+// Code généré par Claude.IA pour gérer la création d'une recette
 type PreparationAEnregistrer = {
   nom: string;
   ordre: number;
@@ -46,10 +46,10 @@ export const actions: Actions = {
     const titre = formData.get('titre')?.toString() ?? '';
     const description = formData.get('description')?.toString() ?? '';
 
-    // Une valeur par préparation, dans l'ordre où elles apparaissent dans le formulaire
+    // Récupère les noms de chaque préparation
     const preparationNoms = formData.getAll('preparation_nom').map(String);
 
-    // Étapes : chaque étape est accompagnée de l'index de sa préparation d'origine
+    // Récupère les étapes de chaque préparation
     const etapesPrepIndex = formData
       .getAll('etape_preparation_index')
       .map(Number);
@@ -57,13 +57,15 @@ export const actions: Actions = {
       .getAll('etape')
       .map((e) => e.toString().trim());
 
-    // Récupère les tableaux d'ingrédients sélectionnés (même index = même ingrédient),
-    // chacun accompagné de l'index de sa préparation d'origine
+    // Récupère les ingrédients associés à chaque préparation
     const ingredientsPrepIndex = formData
       .getAll('preparation_index')
       .map(Number);
+    // Récupère les ID des ingredients
     const ingredientIds = formData.getAll('ingredient_id').map(Number);
+    // Récupère les quantités
     const quantites = formData.getAll('quantite').map(String);
+    // Récupère les unités
     const unites = formData.getAll('unite').map(String);
 
     // Vérifie que le titre est présent
@@ -79,14 +81,12 @@ export const actions: Actions = {
       return fail(400, { message: 'Chaque préparation doit avoir un nom' });
     }
 
-    // Assemble et valide toutes les préparations AVANT la moindre écriture :
-    // un refus au milieu de la boucle laisserait sinon une recette à moitié
-    // enregistrée, que rien ne viendrait annuler.
+    // Code généré par Claude.IA pour assembler et valider toutes les préparations
     const preparationsAEnregistrer: PreparationAEnregistrer[] = [];
 
+    // Parcourt chaque préparation pour valider ses étapes et ses ingrédients
     for (let i = 0; i < preparationNoms.length; i++) {
-      // Ne garde que les étapes appartenant à cette préparation, en écartant
-      // les blocs laissés vides dans le formulaire
+      // Retrouve les étapes appartenant à cette préparation
       const etapesDeCettePrep = etapesTexte.filter(
         (_, j) => etapesPrepIndex[j] === i && etapesTexte[j],
       );
@@ -103,11 +103,14 @@ export const actions: Actions = {
         .map((prepIndex, k) => (prepIndex === i ? k : -1))
         .filter((k) => k !== -1);
 
+      // Code généré par Claude.IA pour assembler les données de la préparation à enregistrer
       preparationsAEnregistrer.push({
         nom: preparationNoms[i],
         ordre: i,
         // Reconstruit le texte numéroté des étapes de cette préparation
-        etapes: etapesDeCettePrep.map((e, idx) => `${idx + 1}. ${e}`).join('\n'),
+        etapes: etapesDeCettePrep
+          .map((e, idx) => `${idx + 1}. ${e}`)
+          .join('\n'),
         ingredients: indicesIngredients.map((k) => ({
           ingredientId: ingredientIds[k],
           quantite: quantites[k]?.trim() || '',
@@ -147,6 +150,7 @@ export const actions: Actions = {
       }
     }
 
+    // Redirige vers la page de la nouvelle recette créée
     throw redirect(303, `/recettes/${nouvelleRecetteId}`);
   },
 };
