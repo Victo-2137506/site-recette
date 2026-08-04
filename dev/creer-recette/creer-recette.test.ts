@@ -1,8 +1,16 @@
 // Tous les cas de `src/routes/mes-recettes/creer/+page.server.ts` : le
 // formulaire de création et l'insertion de la recette.
 //
-// Le formulaire envoie un champ `etape` par bloc d'étape ; la route les
-// renumérote en un seul texte (« 1. ... \n 2. ... ») avant de l'enregistrer.
+// Le formulaire est découpé en préparations. Chaque champ répété porte l'index
+// de la préparation à laquelle il appartient :
+//
+//   preparation_nom            un par préparation, dans l'ordre d'affichage
+//   etape / etape_preparation_index    une étape et sa préparation d'origine
+//   ingredient_id / quantite / unite / preparation_index   idem pour une ligne
+//                                                          d'ingrédient
+//
+// La route renumérote les étapes de chaque préparation en un seul texte
+// (« 1. ... \n 2. ... ») avant de l'enregistrer.
 
 import { describe, it, expect } from 'vitest';
 import { isRedirect } from '@sveltejs/kit';
@@ -15,6 +23,14 @@ import {
 } from '../helpers/evenement';
 import { base } from '../helpers/faux-db';
 import { load, actions } from '../../src/routes/mes-recettes/creer/+page.server';
+
+// Les préparations de la recette qui vient d'être créée, dans l'ordre.
+const preparationsDe = (recetteId: number) =>
+  base().preparations.filter((p) => p.recetteId === recetteId);
+
+// Les ingrédients rattachés à une préparation donnée.
+const ingredientsDe = (preparationId: number) =>
+  base().recetteIngredients.filter((ri) => ri.preparationId === preparationId);
 
 describe('load de la création de recette', () => {
   it('redirige vers /connexion si l’utilisateur n’est pas connecté', async () => {
@@ -42,7 +58,12 @@ describe('action de création de recette', () => {
       await actions.default(
         evenementFormulaire({
           user: null,
-          champs: { titre: 'Tarte', etape: 'Cuire', ingredient_id: '1', quantite: '1' },
+          champs: {
+            titre: 'Tarte',
+            preparation_nom: 'Pâte',
+            etape: 'Cuire',
+            etape_preparation_index: '0',
+          },
         }),
       ),
     );
@@ -57,42 +78,22 @@ describe('action de création de recette', () => {
       await actions.default(
         evenementFormulaire({
           user: { id: 'u1' },
-          champs: { titre: '', etape: 'Cuire', ingredient_id: '1', quantite: '1' },
-        }),
-      ),
-    );
-
-    expect(resultat.status).toBe(400);
-    expect(resultat.data).toEqual({
-      message: 'Le titre et au moins une étape sont requis',
-    });
-    expect(base().recettes).toHaveLength(3);
-  });
-
-  it('refuse une recette sans aucune étape avec un 400', async () => {
-    // Les blocs vides ou faits d'espaces sont écartés : il ne reste rien.
-    const resultat = echec(
-      await actions.default(
-        evenementFormulaire({
-          user: { id: 'u1' },
           champs: {
-            titre: 'Tarte',
-            etape: ['', '   '],
-            ingredient_id: '1',
-            quantite: '1',
+            titre: '',
+            preparation_nom: 'Pâte',
+            etape: 'Cuire',
+            etape_preparation_index: '0',
           },
         }),
       ),
     );
 
     expect(resultat.status).toBe(400);
-    expect(resultat.data).toEqual({
-      message: 'Le titre et au moins une étape sont requis',
-    });
+    expect(resultat.data).toEqual({ message: 'Le titre est requis' });
     expect(base().recettes).toHaveLength(3);
   });
 
-  it('refuse une recette sans aucun ingrédient avec un 400', async () => {
+  it('refuse une recette sans aucune préparation avec un 400', async () => {
     const resultat = echec(
       await actions.default(
         evenementFormulaire({
@@ -103,23 +104,76 @@ describe('action de création de recette', () => {
     );
 
     expect(resultat.status).toBe(400);
-    expect(resultat.data).toEqual({ message: 'Sélectionne au moins un ingrédient' });
+    expect(resultat.data).toEqual({
+      message: 'Chaque préparation doit avoir un nom',
+    });
     expect(base().recettes).toHaveLength(3);
   });
 
-  it('insère la recette et ses ingrédients, puis redirige vers la fiche', async () => {
+  it('refuse une préparation dont le nom est vide ou fait d’espaces', async () => {
+    // La première a un nom, pas la seconde : la recette entière est refusée.
+    const resultat = echec(
+      await actions.default(
+        evenementFormulaire({
+          user: { id: 'u1' },
+          champs: {
+            titre: 'Tarte',
+            preparation_nom: ['Pâte', '   '],
+            etape: ['Mélanger', 'Étaler'],
+            etape_preparation_index: ['0', '1'],
+          },
+        }),
+      ),
+    );
+
+    expect(resultat.status).toBe(400);
+    expect(resultat.data).toEqual({
+      message: 'Chaque préparation doit avoir un nom',
+    });
+    expect(base().recettes).toHaveLength(3);
+    expect(base().preparations).toHaveLength(4);
+  });
+
+  it('refuse une préparation sans aucune étape, en la nommant dans le message', async () => {
+    // Les blocs vides ou faits d'espaces sont écartés : la « Garniture »
+    // se retrouve sans étape.
+    const resultat = echec(
+      await actions.default(
+        evenementFormulaire({
+          user: { id: 'u1' },
+          champs: {
+            titre: 'Tarte',
+            preparation_nom: ['Pâte', 'Garniture'],
+            etape: ['Mélanger', '   '],
+            etape_preparation_index: ['0', '1'],
+          },
+        }),
+      ),
+    );
+
+    expect(resultat.status).toBe(400);
+    expect(resultat.data).toEqual({
+      message: 'La préparation "Garniture" doit avoir au moins une étape',
+    });
+  });
+
+  it('insère la recette, ses préparations et leurs ingrédients, puis redirige vers la fiche', async () => {
     const erreur = await attraper(() =>
       actions.default(
         evenementFormulaire({
           user: { id: 'u1' },
           champs: {
-            titre: 'Poulet au soja',
-            description: 'Rapide',
-            etape: ['Mariner', 'Cuire'],
-            // Les trois listes sont parallèles : même index = même ingrédient.
-            ingredient_id: ['1', '3'],
-            quantite: ['300', '2'],
-            unite: ['g', 'c. à s.'],
+            titre: 'Tarte aux pommes',
+            description: 'Classique',
+            preparation_nom: ['Pâte', 'Garniture'],
+            // Deux étapes pour la pâte (index 0), une pour la garniture (index 1).
+            etape: ['Mélanger la farine', 'Étaler', 'Couper les pommes'],
+            etape_preparation_index: ['0', '0', '1'],
+            // Les quatre listes sont parallèles : même index = même ligne.
+            preparation_index: ['0', '1', '1'],
+            ingredient_id: ['1', '2', '3'],
+            quantite: ['200', '150', '2'],
+            unite: ['g', 'g', ''],
           },
         }),
       ),
@@ -129,17 +183,32 @@ describe('action de création de recette', () => {
     const creee = base().recettes.at(-1)!;
     expect(creee).toMatchObject({
       id: 13,
-      titre: 'Poulet au soja',
-      description: 'Rapide',
-      // Les blocs d'étapes sont concaténés et numérotés.
-      etapes: '1. Mariner\n2. Cuire',
+      titre: 'Tarte aux pommes',
+      description: 'Classique',
       utilisateurId: 'u1',
     });
 
-    // Les associations ingrédient/quantité/unité pointent bien vers cette recette.
-    expect(base().recetteIngredients.filter((ri) => ri.recetteId === 13)).toEqual([
-      { recetteId: 13, ingredientId: 1, quantite: '300', unite: 'g' },
-      { recetteId: 13, ingredientId: 3, quantite: '2', unite: 'c. à s.' },
+    // Deux préparations, numérotées dans l'ordre du formulaire, chacune avec
+    // ses étapes renumérotées.
+    const [pate, garniture] = preparationsDe(13);
+    expect(pate).toMatchObject({
+      nom: 'Pâte',
+      ordre: 0,
+      etapes: '1. Mélanger la farine\n2. Étaler',
+    });
+    expect(garniture).toMatchObject({
+      nom: 'Garniture',
+      ordre: 1,
+      etapes: '1. Couper les pommes',
+    });
+
+    // Chaque ingrédient est rattaché à sa préparation, pas à la recette.
+    expect(ingredientsDe(pate.id)).toEqual([
+      { preparationId: pate.id, ingredientId: 1, quantite: '200', unite: 'g' },
+    ]);
+    expect(ingredientsDe(garniture.id)).toEqual([
+      { preparationId: garniture.id, ingredientId: 2, quantite: '150', unite: 'g' },
+      { preparationId: garniture.id, ingredientId: 3, quantite: '2', unite: null },
     ]);
 
     expect(isRedirect(erreur)).toBe(true);
@@ -147,24 +216,27 @@ describe('action de création de recette', () => {
     expect(erreur.location).toBe('/recettes/13');
   });
 
-  it('renumérote les étapes en ignorant les blocs vides', async () => {
+  it('renumérote les étapes de chaque préparation en ignorant les blocs vides', async () => {
     // Un bloc laissé vide au milieu du formulaire ne doit pas créer de trou
-    // dans la numérotation enregistrée.
+    // dans la numérotation, et la numérotation repart à 1 à chaque préparation.
     await attraper(() =>
       actions.default(
         evenementFormulaire({
           user: { id: 'u1' },
           champs: {
-            titre: 'Salade',
-            etape: ['  Laver  ', '', 'Couper', '   '],
-            ingredient_id: '1',
-            quantite: '1',
+            titre: 'Salade composée',
+            preparation_nom: ['Légumes', 'Sauce'],
+            etape: ['  Laver  ', '', 'Couper', 'Mélanger', '   '],
+            etape_preparation_index: ['0', '0', '0', '1', '1'],
           },
         }),
       ),
     );
 
-    expect(base().recettes.at(-1)!.etapes).toBe('1. Laver\n2. Couper');
+    expect(preparationsDe(13).map((p) => p.etapes)).toEqual([
+      '1. Laver\n2. Couper',
+      '1. Mélanger',
+    ]);
   });
 
   it('enregistre `null` quand l’unité est vide ou faite d’espaces', async () => {
@@ -176,7 +248,10 @@ describe('action de création de recette', () => {
           user: { id: 'u1' },
           champs: {
             titre: 'Salade',
+            preparation_nom: 'Salade',
             etape: 'Mélanger',
+            etape_preparation_index: '0',
+            preparation_index: ['0', '0'],
             ingredient_id: ['1', '2'],
             quantite: ['1', '  2  '],
             unite: ['', '   '],
@@ -185,10 +260,61 @@ describe('action de création de recette', () => {
       ),
     );
 
-    expect(base().recetteIngredients.filter((ri) => ri.recetteId === 13)).toEqual([
-      { recetteId: 13, ingredientId: 1, quantite: '1', unite: null },
+    const [salade] = preparationsDe(13);
+    expect(ingredientsDe(salade.id)).toEqual([
+      { preparationId: salade.id, ingredientId: 1, quantite: '1', unite: null },
       // La quantité est également nettoyée de ses espaces.
-      { recetteId: 13, ingredientId: 2, quantite: '2', unite: null },
+      { preparationId: salade.id, ingredientId: 2, quantite: '2', unite: null },
     ]);
+  });
+
+  it('accepte une préparation sans aucun ingrédient', async () => {
+    // Rien n'oblige à cocher un ingrédient : une préparation peut n'être
+    // qu'une suite d'étapes (« Préchauffer le four »).
+    const erreur = await attraper(() =>
+      actions.default(
+        evenementFormulaire({
+          user: { id: 'u1' },
+          champs: {
+            titre: 'Eau chaude',
+            preparation_nom: 'Cuisson',
+            etape: 'Faire bouillir',
+            etape_preparation_index: '0',
+          },
+        }),
+      ),
+    );
+
+    const [cuisson] = preparationsDe(13);
+    expect(cuisson.etapes).toBe('1. Faire bouillir');
+    expect(ingredientsDe(cuisson.id)).toEqual([]);
+    expect(isRedirect(erreur)).toBe(true);
+    expect(erreur.location).toBe('/recettes/13');
+  });
+
+  it('n’enregistre rien du tout quand une préparation est refusée', async () => {
+    // Toutes les préparations sont validées avant la première écriture : une
+    // étape manquante sur la seconde ne doit laisser ni recette incomplète ni
+    // préparation orpheline derrière elle.
+    const resultat = echec(
+      await actions.default(
+        evenementFormulaire({
+          user: { id: 'u1' },
+          champs: {
+            titre: 'Tarte inachevée',
+            preparation_nom: ['Pâte', 'Garniture'],
+            etape: 'Mélanger',
+            etape_preparation_index: '0',
+          },
+        }),
+      ),
+    );
+
+    expect(resultat.status).toBe(400);
+    expect(resultat.data).toEqual({
+      message: 'La préparation "Garniture" doit avoir au moins une étape',
+    });
+    expect(base().recettes).toHaveLength(3);
+    expect(base().preparations).toHaveLength(4);
   });
 });

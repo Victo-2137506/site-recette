@@ -62,6 +62,7 @@ export const load: PageServerLoad = async ({ url }) => {
   const rows = await db
     .select({
       recetteId: preparations.recetteId,
+      ingredientId: recetteIngredients.ingredientId,
     })
     .from(recetteIngredients)
     .innerJoin(
@@ -70,17 +71,22 @@ export const load: PageServerLoad = async ({ url }) => {
     )
     .where(inArray(recetteIngredients.ingredientId, selectionIngredients));
 
-  // Compter combien d'ingrédients cochés chaque recette possède
-  const countMap = new Map<number, number>();
+  // Rassembler, pour chaque recette, les ingrédients cochés qu'elle contient.
+  // On passe par un Set : un même ingrédient peut apparaître dans plusieurs
+  // préparations d'une même recette, et il ne doit compter qu'une fois.
+  const ingredientsParRecette = new Map<number, Set<number>>();
 
-  // Parcourt les lignes récupérées et met à jour le compteur pour chaque recette
+  // Parcourt les lignes récupérées et note l'ingrédient trouvé pour sa recette
   for (const row of rows) {
-    countMap.set(row.recetteId, (countMap.get(row.recetteId) ?? 0) + 1);
+    if (!ingredientsParRecette.has(row.recetteId)) {
+      ingredientsParRecette.set(row.recetteId, new Set());
+    }
+    ingredientsParRecette.get(row.recetteId)!.add(row.ingredientId);
   }
 
   // Garder uniquement les recettes qui ont TOUS les ingrédients cochés
-  const validRecetteIds = [...countMap.entries()]
-    .filter(([_, count]) => count === selectionIngredients.length)
+  const validRecetteIds = [...ingredientsParRecette.entries()]
+    .filter(([_, trouves]) => trouves.size === selectionIngredients.length)
     .map(([id]) => id);
 
   // Récupérer les recettes finales

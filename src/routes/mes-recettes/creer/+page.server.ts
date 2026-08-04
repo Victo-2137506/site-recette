@@ -20,6 +20,18 @@ export const load: PageServerLoad = async ({ locals }) => {
   return { ingredients: tousLesIngredients };
 };
 
+// Une préparation entièrement validée, prête à être insérée telle quelle.
+type PreparationAEnregistrer = {
+  nom: string;
+  ordre: number;
+  etapes: string;
+  ingredients: {
+    ingredientId: number;
+    quantite: string;
+    unite: string | null;
+  }[];
+};
+
 // Gère la soumission du formulaire de création de recette
 export const actions: Actions = {
   default: async ({ request, locals }) => {
@@ -67,6 +79,43 @@ export const actions: Actions = {
       return fail(400, { message: 'Chaque préparation doit avoir un nom' });
     }
 
+    // Assemble et valide toutes les préparations AVANT la moindre écriture :
+    // un refus au milieu de la boucle laisserait sinon une recette à moitié
+    // enregistrée, que rien ne viendrait annuler.
+    const preparationsAEnregistrer: PreparationAEnregistrer[] = [];
+
+    for (let i = 0; i < preparationNoms.length; i++) {
+      // Ne garde que les étapes appartenant à cette préparation, en écartant
+      // les blocs laissés vides dans le formulaire
+      const etapesDeCettePrep = etapesTexte.filter(
+        (_, j) => etapesPrepIndex[j] === i && etapesTexte[j],
+      );
+
+      // Vérifie que cette préparation a au moins une étape
+      if (etapesDeCettePrep.length === 0) {
+        return fail(400, {
+          message: `La préparation "${preparationNoms[i]}" doit avoir au moins une étape`,
+        });
+      }
+
+      // Retrouve les indices des ingrédients appartenant à cette préparation
+      const indicesIngredients = ingredientsPrepIndex
+        .map((prepIndex, k) => (prepIndex === i ? k : -1))
+        .filter((k) => k !== -1);
+
+      preparationsAEnregistrer.push({
+        nom: preparationNoms[i],
+        ordre: i,
+        // Reconstruit le texte numéroté des étapes de cette préparation
+        etapes: etapesDeCettePrep.map((e, idx) => `${idx + 1}. ${e}`).join('\n'),
+        ingredients: indicesIngredients.map((k) => ({
+          ingredientId: ingredientIds[k],
+          quantite: quantites[k]?.trim() || '',
+          unite: unites[k]?.trim() || null,
+        })),
+      });
+    }
+
     // Insère la recette et récupère son id généré
     const [resultat] = await db.insert(recettes).values({
       titre,
@@ -78,45 +127,21 @@ export const actions: Actions = {
     const nouvelleRecetteId = resultat.insertId;
 
     // Crée chaque préparation, avec ses propres étapes et ses propres ingrédients
-    for (let i = 0; i < preparationNoms.length; i++) {
-      // Reconstruit le texte numéroté des étapes appartenant à cette préparation
-      const etapesDeCettePrep = etapesTexte.filter(
-        (_, j) => etapesPrepIndex[j] === i && etapesTexte[j],
-      );
-      const etapesFormatees = etapesDeCettePrep
-        .map((e, idx) => `${idx + 1}. ${e}`)
-        .join('\n');
-
-      // Vérifie que cette préparation a au moins une étape
-      if (etapesDeCettePrep.length === 0) {
-        return fail(400, {
-          message: `La préparation "${preparationNoms[i]}" doit avoir au moins une étape`,
-        });
-      }
-
+    for (const preparation of preparationsAEnregistrer) {
       // Insère la préparation et récupère son id généré
       const [resultatPreparation] = await db.insert(preparations).values({
-        nom: preparationNoms[i],
-        ordre: i,
-        etapes: etapesFormatees,
+        nom: preparation.nom,
+        ordre: preparation.ordre,
+        etapes: preparation.etapes,
         recetteId: nouvelleRecetteId,
       });
 
-      const nouvellePreparationId = resultatPreparation.insertId;
-
-      // Retrouve les indices des ingrédients appartenant à cette préparation
-      const indicesIngredients = ingredientsPrepIndex
-        .map((prepIndex, k) => (prepIndex === i ? k : -1))
-        .filter((k) => k !== -1);
-
       // Insère chaque association ingrédient/quantité/unité pour cette préparation
-      if (indicesIngredients.length > 0) {
+      if (preparation.ingredients.length > 0) {
         await db.insert(recetteIngredients).values(
-          indicesIngredients.map((k) => ({
-            preparationId: nouvellePreparationId,
-            ingredientId: ingredientIds[k],
-            quantite: quantites[k]?.trim() || '',
-            unite: unites[k]?.trim() || null,
+          preparation.ingredients.map((ingredient) => ({
+            preparationId: resultatPreparation.insertId,
+            ...ingredient,
           })),
         );
       }

@@ -48,6 +48,22 @@ describe('action supprimer de « mes recettes »', () => {
     expect(base().recettes.map((r) => r.id)).toEqual([10, 12]);
   });
 
+  it('emporte les préparations, leurs ingrédients et les j’aime de la recette', async () => {
+    // La route ne supprime que la ligne `recettes` : tout le reste part par
+    // cascade, sinon la base garderait des préparations orphelines.
+    await actions.supprimer(
+      evenementFormulaire({ user: { id: 'u1' }, champs: { id: '10' } }),
+    );
+
+    expect(base().preparations.filter((p) => p.recetteId === 10)).toEqual([]);
+    expect(
+      base().recetteIngredients.filter((ri) => ri.preparationId === 100 || ri.preparationId === 101),
+    ).toEqual([]);
+    expect(base().jaime.filter((j) => j.recetteId === 10)).toEqual([]);
+    // Les préparations des autres recettes restent intactes.
+    expect(base().preparations.map((p) => p.id)).toEqual([102, 103]);
+  });
+
   it('refuse la suppression avec un 401 si l’utilisateur n’est pas connecté', async () => {
     const resultat = echec(
       await actions.supprimer(evenementFormulaire({ user: null, champs: { id: '10' } })),
