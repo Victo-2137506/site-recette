@@ -20,13 +20,14 @@ async function ajouterNombreJaimes(
   // Récupère les IDs des recettes
   const idsRecettes = recettesListe.map((r) => r.id);
 
-  // Compte les likes pour chaque recette d'un coup, plutôt qu'une requête par recette
+  // Compte les likes pour chaque recette
   const compteurs = await db
     .select({ recetteId: jaime.recetteId, total: count() })
     .from(jaime)
     .where(inArray(jaime.recetteId, idsRecettes))
     .groupBy(jaime.recetteId);
 
+  // Chaque recette à ses propres likes
   const compteursMap = new Map(compteurs.map((c) => [c.recetteId, c.total]));
 
   return recettesListe.map((recette) => ({
@@ -37,8 +38,7 @@ async function ajouterNombreJaimes(
 
 // Récupère les recettes et les ingrédients en fonction des ingrédients sélectionnés
 export const load: PageServerLoad = async ({ url }) => {
-  // On déduplique et on ignore les valeurs non numériques pour éviter
-  // qu'un paramètre invalide ou répété ne fausse le comptage plus bas.
+  // Récupère les ingrédients sélectionnés depuis l'URL
   const selectionIngredients = [
     ...new Set(url.searchParams.getAll('ingredient').map(Number)),
   ].filter(Number.isFinite);

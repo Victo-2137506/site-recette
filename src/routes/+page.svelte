@@ -107,6 +107,7 @@
 			<span class="text-sm font-semibold text-gray-500">Filtres actifs :</span>
 			<!-- Boucle sur ingredientsSelectionnes pour afficher une pastille par ingrédient actif -->
 			{#each ingredientsSelectionnes as ingredient}
+			<!-- Bouton pour retirer un ingrédient  -->
 				<button
 					type="button"
 					class="flex items-center gap-1.5 rounded-full bg-orange-600/10 py-1.5 pl-3.5 pr-2.5 text-sm text-orange-700 transition hover:bg-orange-600/20"
@@ -116,6 +117,7 @@
 					<span class="text-base leading-none">×</span>
 				</button>
 			{/each}
+			<!-- Bouton pour effacer tous les filtres -->
 			<button
 				type="button"
 				class="ml-1 text-sm text-gray-500 underline hover:text-orange-600"
