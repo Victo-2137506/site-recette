@@ -110,7 +110,7 @@ src/
     └── profil/                  profil privé
         └── [id]/                profil public d'un utilisateur
 
-dev/                             tests unitaires (voir dev/README.md)
+dev/                             tests unitaires + tests-fonctionnels.txt
 ```
 
 ## Modèle de données
@@ -149,8 +149,11 @@ npm run test:run  # une seule passe
 
 La vraie base n'est jamais contactée : `$lib/server/db` et `$lib/server/auth`
 sont remplacés par des mocks, la suite tourne donc sans MySQL ni
-`DATABASE_URL`. Le détail de l'organisation des tests, du jeu de données et des
-helpers est documenté dans [dev/README.md](dev/README.md).
+`DATABASE_URL`.
+
+Les tests fonctionnels — 72 parcours à rejouer dans le navigateur avant chaque
+livraison — sont listés dans
+[dev/tests-fonctionnels.txt](dev/tests-fonctionnels.txt).
 
 ## Déploiement
 

@@ -1,0 +1,318 @@
+Tout les tests ont été générer par Claude.IA y compris le fichier tests-fonctionnels.txt
+========================================================================
+TESTS FONCTIONNELS - Les recettes de grand-mere
+========================================================================
+
+Liste des tests a rejouer dans le navigateur avant chaque livraison.
+Cocher [x] devant chaque test qui passe.
+
+AVANT DE COMMENCER
+------------------
+  1. Remplir le fichier .env (DATABASE_URL, ORIGIN, BETTER_AUTH_SECRET)
+  2. npm run db:push
+  3. Ajouter des ingredients en base (aucune page ne le permet) :
+     INSERT INTO ingredients (nom) VALUES ('Poulet'),('Riz'),('Soja'),('Pommes');
+  4. npm run dev   ->   http://localhost:5173
+
+  Comptes utilises : Alice (alice@test.fr / motdepasse1)
+                     Bob   (bob@test.fr   / motdepasse2)
+  Ils sont crees par les tests 3 et 4.
+
+  Recettes de reference, creees par Alice au test 40 :
+     "Poulet au riz"  = preparation Marinade (Poulet) + preparation Cuisson (Riz)
+     "Poulet roti"    = preparation Preparation (Poulet)
+  Et "Riz saute" (Riz + Soja) creee par Bob, pour tester les droits.
+
+
+1. INSCRIPTION, CONNEXION, DECONNEXION
+--------------------------------------
+
+[ ] 1  Ouvrir / sans etre connecte.
+       Attendu : l'en-tete ne montre que "General" et "Connexion".
+
+[ ] 2  Ouvrir /profil et /mes-recettes sans etre connecte.
+       Attendu : redirection vers /connexion dans les deux cas.
+
+[ ] 3  Sur /connexion : nom Alice, alice@test.fr, motdepasse1, "S'inscrire".
+       Attendu : compte cree et connecte, arrivee sur /profil, nom "Alice"
+       affiche. L'en-tete montre maintenant Mes recettes / Profil / Deconnexion.
+
+[ ] 4  Refaire le test 3 avec Bob (bob@test.fr / motdepasse2).
+       Attendu : deuxieme compte cree.
+
+[ ] 5  S'inscrire une 2e fois avec alice@test.fr.
+       Attendu : reste sur /connexion, message d'erreur rouge, pas de doublon.
+
+[ ] 6  S'inscrire avec un mot de passe trop court (123).
+       Attendu : message d'erreur, compte non cree.
+
+[ ] 7  Se connecter avec alice@test.fr / motdepasse1.
+       Attendu : redirection vers /profil.
+
+[ ] 8  Se connecter avec alice@test.fr / mauvais.
+       Attendu : reste sur /connexion, message d'erreur, toujours deconnecte.
+
+[ ] 9  Etant connecte, ouvrir /connexion.
+       Attendu : redirection automatique vers /profil.
+
+[ ] 10 Cliquer "Deconnexion".
+       Attendu : retour sur /connexion, en-tete en mode visiteur, /profil
+       redirige de nouveau vers /connexion.
+
+[ ] 11 Se connecter, fermer l'onglet, rouvrir localhost:5173/profil.
+       Attendu : toujours connecte (session conservee).
+
+
+2. ACCUEIL ET FILTRAGE PAR INGREDIENTS
+--------------------------------------
+
+[ ] 12 Ouvrir / sans filtre.
+       Attendu : toutes les recettes, avec titre, description et compteur de
+       coeurs.
+
+[ ] 13 Cliquer la pastille "Poulet".
+       Attendu : l'URL devient /?ingredient=1, seules les recettes au poulet
+       restent, la pastille est orange et apparait dans "Filtres actifs".
+
+[ ] 14 Cliquer ensuite "Riz".
+       Attendu : seule "Poulet au riz" reste. Elle passe le filtre alors que
+       ses deux ingredients sont dans deux preparations differentes.
+
+[ ] 15 Cocher "Poulet" + "Soja" (aucune recette ne les a tous les deux).
+       Attendu : message "Aucune recette ne correspond a ces filtres", et la
+       liste des pastilles reste complete.
+
+[ ] 16 Recliquer une pastille active, ou cliquer sa croix dans Filtres actifs.
+       Attendu : le filtre est retire, liste et URL mises a jour.
+
+[ ] 17 Cliquer "Tout effacer".
+       Attendu : plus aucun filtre, URL revenue a /, toutes les recettes.
+
+[ ] 18 Taper "ri" dans le champ "Rechercher un ingredient...".
+       Attendu : seules les pastilles contenant "ri" restent, les filtres deja
+       actifs ne sont pas perdus. Taper "zzz" affiche le message
+       "Aucun ingredient ne correspond".
+
+[ ] 19 Copier /?ingredient=1&ingredient=2 dans un nouvel onglet.
+       Attendu : meme selection et meme liste : le filtre est partageable.
+
+[ ] 20 Ouvrir /?ingredient=abc puis /?ingredient=9999.
+       Attendu : "abc" est ignore (toutes les recettes), l'id inexistant ne
+       renvoie aucune recette. Aucune erreur dans les deux cas.
+
+[ ] 21 Cliquer une recette de la liste.
+       Attendu : ouvre sa fiche /recettes/{id}.
+
+
+3. FICHE D'UNE RECETTE ET J'AIME
+--------------------------------
+
+[ ] 22 Ouvrir la fiche de "Poulet au riz".
+       Attendu : titre, auteur cliquable, description, puis une section par
+       preparation (Marinade, Cuisson) dans l'ordre, chacune avec ses propres
+       ingredients et ses etapes numerotees. Les ingredients s'affichent
+       "200 g - Poulet" ; sans unite, seulement "2 - Pommes".
+
+[ ] 23 Cliquer le nom de l'auteur.
+       Attendu : ouvre son profil public /profil/{id}.
+
+[ ] 24 Ouvrir /recettes/abc et /recettes/9999.
+       Attendu : page d'erreur 404 "Recette introuvable".
+
+[ ] 25 Sans etre connecte, cliquer le bouton coeur.
+       Attendu : coeur blanc au depart, et apres le clic le compteur ne bouge
+       pas (le serveur refuse, aucun j'aime enregistre).
+
+[ ] 26 Connecte, cliquer le bouton coeur.
+       Attendu : coeur rouge, compteur +1, sans rechargement complet.
+
+[ ] 27 Recliquer le bouton.
+       Attendu : coeur blanc, compteur revenu a sa valeur de depart.
+
+[ ] 28 Aimer une recette puis recharger la page (F5).
+       Attendu : le coeur rouge est conserve (le j'aime est bien en base).
+
+[ ] 29 Alice aime une recette, se deconnecte, Bob ouvre la meme fiche.
+       Attendu : Bob voit le compteur a 1 mais un coeur blanc.
+
+[ ] 30 Revenir sur / apres avoir aime.
+       Attendu : le compteur de l'accueil est le meme que celui de la fiche.
+
+
+4. CREER UNE RECETTE
+--------------------
+
+[ ] 31 Ouvrir /mes-recettes/creer sans etre connecte.
+       Attendu : redirection vers /connexion.
+
+[ ] 32 Connecte, ouvrir /mes-recettes/creer.
+       Attendu : formulaire avec une preparation vide et tous les ingredients
+       de la base.
+
+[ ] 33 Cliquer "Ajouter une preparation" deux fois, en supprimer une.
+       Attendu : deux blocs restent, independants l'un de l'autre.
+
+[ ] 34 Dans une preparation : ajouter trois etapes, en supprimer une.
+       Attendu : deux champs d'etape restent, dans l'ordre saisi.
+
+[ ] 35 Cliquer un ingredient dans une preparation, saisir quantite et unite.
+       Attendu : la ligne apparait dans cette preparation seulement ;
+       recliquer l'ingredient la retire.
+
+[ ] 36 Envoyer avec le titre vide.
+       Attendu : message "Le titre est requis", rien n'est enregistre.
+
+[ ] 37 Envoyer avec un titre mais aucune preparation, puis avec une
+       preparation dont le nom est vide ou fait d'espaces.
+       Attendu : message "Chaque preparation doit avoir un nom", rien
+       n'est enregistre.
+
+[ ] 38 Nommer une preparation "Garniture" sans lui donner d'etape.
+       Attendu : message 'La preparation "Garniture" doit avoir au moins une
+       etape' : la preparation fautive est nommee.
+
+[ ] 39 Remplir correctement la 1re preparation, laisser la 2e sans etape,
+       envoyer.
+       Attendu : message d'erreur ET aucune trace de la recette : ni la
+       recette, ni la 1re preparation ne sont creees.
+
+[ ] 40 Creer "Poulet au riz" : preparation Marinade (1 etape, Poulet 200 g)
+       + preparation Cuisson (2 etapes, Riz 150 g).
+       Attendu : arrivee sur /recettes/{id} ; les deux preparations, leurs
+       etapes numerotees 1. et 2., et chaque ingredient au bon endroit.
+
+[ ] 41 Creer une recette en laissant un champ d'etape vide au milieu.
+       Attendu : les etapes vides sont ignorees, la numerotation reste
+       continue (1., 2., sans trou).
+
+[ ] 42 Saisir un ingredient avec une quantite mais sans unite.
+       Attendu : la fiche affiche "2 - Pommes", sans espace ni tiret en trop.
+
+[ ] 43 Creer une preparation avec des etapes mais aucun ingredient.
+       Attendu : recette creee, preparation affichee sans liste d'ingredients.
+
+[ ] 44 Apres creation, ouvrir /mes-recettes et /.
+       Attendu : la nouvelle recette apparait dans les deux listes, a 0 coeur.
+
+
+5. MODIFIER UNE RECETTE
+-----------------------
+
+[ ] 45 Ouvrir /mes-recettes/1/modifier sans etre connecte.
+       Attendu : redirection vers /connexion.
+
+[ ] 46 Alice ouvre la modification d'une de ses recettes.
+       Attendu : formulaire pre-rempli : titre, description, toutes les
+       preparations avec leurs etapes et leurs ingredients (quantite + unite)
+       rattaches a la bonne preparation.
+
+[ ] 47 Alice ouvre /mes-recettes/{id d'une recette de Bob}/modifier.
+       Attendu : erreur 403 "Tu n'as pas le droit de modifier cette recette".
+
+[ ] 48 Ouvrir /mes-recettes/abc/modifier, puis l'id d'une recette supprimee.
+       Attendu : erreur 404 "Recette introuvable".
+
+[ ] 49 Vider le titre et envoyer.
+       Attendu : message "Le titre est requis" ; la recette reste inchangee.
+
+[ ] 50 Vider le nom d'une preparation et envoyer.
+       Attendu : message "Chaque preparation doit avoir un nom" ; la recette,
+       ses preparations et ses ingredients sont intacts (rien n'est perdu).
+
+[ ] 51 Changer le titre, renommer une preparation, ajouter une etape, envoyer.
+       Attendu : arrivee sur /recettes/{id}, la fiche montre exactement les
+       nouvelles valeurs.
+
+[ ] 52 Supprimer une preparation entiere et envoyer.
+       Attendu : elle disparait de la fiche avec ses ingredients ; les autres
+       preparations sont conservees telles quelles.
+
+[ ] 53 Retirer tous les ingredients d'une preparation et envoyer.
+       Attendu : la preparation reste affichee avec ses etapes, sans
+       ingredient.
+
+[ ] 54 Faire aimer la recette par Bob, puis la modifier avec Alice.
+       Attendu : le compteur de coeurs est inchange apres modification.
+
+
+6. MES RECETTES ET SUPPRESSION
+------------------------------
+
+[ ] 55 Alice ouvre /mes-recettes.
+       Attendu : seulement ses recettes ; celles de Bob n'y sont pas.
+
+[ ] 56 Un compte neuf ouvre /mes-recettes.
+       Attendu : liste vide, sans erreur, bouton de creation accessible.
+
+[ ] 57 Cliquer "Supprimer" puis "Annuler" dans la confirmation.
+       Attendu : rien ne se passe, la recette est toujours la.
+
+[ ] 58 Cliquer "Supprimer" puis confirmer.
+       Attendu : la recette disparait de /mes-recettes et de l'accueil ; sa
+       fiche /recettes/{id} renvoie une 404.
+
+[ ] 59 Verifier en base apres suppression (npm run db:studio).
+       Attendu : les preparations, les lignes recette_ingredients et les
+       j'aime de cette recette ont disparu ; le catalogue d'ingredients et les
+       autres recettes sont intacts.
+
+[ ] 60 Bob avait aime la recette supprimee : il ouvre son profil, onglet
+       "Recettes aimees".
+       Attendu : aucune case vide ni erreur, la recette disparue n'est pas
+       listee.
+
+[ ] 61 Depuis le compte d'Alice, envoyer une suppression portant sur une
+       recette de Bob (formulaire ?/supprimer avec l'id de Bob).
+       Attendu : refus, la recette de Bob existe toujours.
+
+
+7. PROFIL PRIVE ET PROFIL PUBLIC
+--------------------------------
+
+[ ] 62 Connecte, ouvrir /profil.
+       Attendu : nom et identifiant, onglet "Mes recettes (n)" avec
+       uniquement ses recettes.
+
+[ ] 63 Alice aime une recette de Bob puis ouvre l'onglet "Recettes aimees".
+       Attendu : la recette de Bob y figure (les recettes aimees ne se
+       limitent pas aux siennes).
+
+[ ] 64 Un compte neuf ouvre l'onglet "Recettes aimees".
+       Attendu : onglet vide, compteur a 0, sans erreur.
+
+[ ] 65 Cliquer une recette depuis l'un ou l'autre onglet.
+       Attendu : ouvre la bonne fiche.
+
+[ ] 66 Alice ouvre /profil/{id de Bob}.
+       Attendu : le nom de Bob et ses recettes seulement ; aucun bouton
+       modifier ou supprimer.
+
+[ ] 67 Ouvrir le meme profil public sans etre connecte.
+       Attendu : la page reste consultable.
+
+[ ] 68 Ouvrir /profil/inconnu.
+       Attendu : erreur 404 "Utilisateur introuvable".
+
+
+8. VERIFICATIONS FINALES
+------------------------
+
+[ ] 69 Rejouer les tests 12 a 21 sur un ecran de telephone (375 px).
+       Attendu : filtres, listes et fiches restent lisibles et cliquables,
+       sans debordement horizontal.
+
+[ ] 70 npm run check
+       Attendu : aucune erreur TypeScript ni Svelte.
+
+[ ] 71 npm run test:run
+       Attendu : les 84 tests unitaires passent.
+
+[ ] 72 npm run build puis npm run preview, rejouer les tests 7, 40 et 58.
+       Attendu : le build de production se comporte comme le mode dev.
+
+
+JOURNAL DE RECETTE
+------------------
+Date        Version / commit    Resultat (OK, ou numeros des tests en echec)
+----------  ------------------  --------------------------------------------
+
