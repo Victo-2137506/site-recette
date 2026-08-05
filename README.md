@@ -167,4 +167,4 @@ Claude.IA : https://claude.ai/new
 
 ---
 
-Le README à été générer en grand partie par Claude.IA.
+Le README à été générer en grande partie par Claude.IA.
