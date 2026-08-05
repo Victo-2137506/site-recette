@@ -1,9 +1,8 @@
 # Les recettes de grand-mère
 
 Site de partage de recettes de cuisine. Chaque utilisateur peut publier ses
-recettes, les découper en plusieurs **préparations** (la pâte, la garniture, la
-sauce…), et retrouver les recettes des autres en filtrant par les ingrédients
-qu'il a sous la main.
+recettes, les découper en plusieurs préparations et retrouver les recettes des autres
+en filtrant par les ingrédients qu'il a sous la main.
 
 ## Fonctionnalités
 
@@ -162,6 +161,13 @@ qui détecte automatiquement les plateformes supportées. Pour un autre
 environnement, remplacer l'adaptateur dans [vite.config.ts](vite.config.ts) par
 celui qui convient (`adapter-node`, `adapter-vercel`, …).
 
+## Source utilisée
+
+SvelteKit : https://svelte.dev/docs/kit/introduction
+Drizzle : https://orm.drizzle.team/docs/overview
+Better-Auth : https://better-auth.com/docs/introduction
+Claude.IA : https://claude.ai/new
+
 ---
 
-Créé par Frédérick BETHERMAT.
+Le README à été générer en grande partie par Claude.IA.
